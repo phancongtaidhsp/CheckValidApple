@@ -107,7 +107,7 @@ const run = async function (pathFileMail, pathFileProxy, thread) {
           }
           countLocal++;
           tryTime++;
-        } while (vInfo.status != 'checked' && tryTime < 5 && !pause);
+        } while (vInfo.status != 'checked' && tryTime < 3 && !pause);
         if(vInfo?.status != 'checked') {
           objectThread[ix] = { mail, checking: false, checked: vInfo.status === "checked" }
           let result = "\n" + Object.values({...vInfo, status: "not checked"}).join("|")
