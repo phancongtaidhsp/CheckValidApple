@@ -1,0 +1,45 @@
+
+.title-app {
+  text-align: center;
+  color: #F95B0B;
+}
+#filepath {
+  width: 500px;
+}
+#char {
+  width: 360px;
+}
+.note{
+  text-align: center;
+}
+.total{
+  font-size: 30px;
+  color: #609BEB;
+}
+.fail{
+  font-size: 30px;
+  color: #f33737;
+}
+.success {
+  font-size: 30px;
+  color: #015c18;
+}
+.mr {
+  margin: 5px 0px;
+}
+.wr{
+  margin: 0 30px 30px 30px;
+}
+.value{
+  margin-top: 30px;
+  margin-left: 20px;
+}
+.button{
+  margin: 0 20px 20px 20px;
+}
+.hidden{
+  visibility: hidden;
+}
+.info{
+  margin-left: 20px;
+}

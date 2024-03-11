@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8">
+  <title>CHBM AppleID (2024. v1)</title>
+  <!-- https://electronjs.org/docs/tutorial/security#csp-meta-tag -->
+  <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline';" />
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="./css/bootstrap.css">
+</head>
+
+<body>
+  <h1 class="title-app">CHBM AppleID (2024. v1)</h1>
+  <div id="thongbao" class="alert alert-success hidden" role="alert">
+    Đã chạy xong file data
+  </div>
+  <div class="wr">
+    <button id="start" type="button" class="button btn btn-primary">Start</button>
+    <button id="pause" type="button" class="button btn btn-danger">Pause</button>
+    <div class="value">
+      <input type="input" id="filepathmail" placeholder="Đường dẫn file mail">
+      <input type="input" id="filepathproxy" placeholder="Đường dẫn file proxy">
+      <input type="input" id="thread" placeholder="Số luồng">
+    </div>
+    <div class="value">
+      <div class="total">
+        <span>Time: </span>
+        <span id="time">0s</span>
+      </div>
+    </div>
+    <div class="value">
+      <div class="success">
+        <span>Success: </span>
+        <span id="live">0</span>
+      </div>
+      <div class="fail">
+        <span>Fail: </span>
+        <span id="die">0</span>
+      </div>
+      <div class="total">
+        <span>Total: </span>
+        <span id="total">0</span>
+      </div>
+    </div>
+  </div>
+  <ul class="info">
+    <li>file data format theo 'id'|'pass'</li>
+  </ul>
+  <script src="./renderer.js"></script>
+</body>
+
+</html>
