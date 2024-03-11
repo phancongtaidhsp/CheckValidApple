@@ -352,6 +352,14 @@ const CHBMAppleID = (email, pass, proxyString) => {
       }, 300000);
       for (let index = 0; index < 2; index++) {
         let widgetKey = await getConfigRequest(proxy, frame_id);
+        if(!widgetKey) {
+          return resolve({
+            mail: email,
+            pass: pass,
+            proxy: proxyString,
+            status: 'not checked'
+          })
+        }
         // set up SRP authenticator & get public key
         let authenticator = new GSASRPAuthenticator(email);
         let initData = await authenticator.getInit();
