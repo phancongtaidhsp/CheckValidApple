@@ -99,6 +99,7 @@ const run = async function (pathFileMail, pathFileProxy, thread) {
           }
           if (!listProxy[countLocal]) {
             countLocal = 0;
+            count = 0;
           }
           vInfo = await CHBMAppleID(mail, pass, listProxy[countLocal]);
           if (vInfo.status == "checked") {
