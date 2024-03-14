@@ -91,9 +91,12 @@ const run = async function (pathFileMail, pathFileProxy, thread) {
     try {
       (async() => {
         let vInfo = {};
-        let countLocal = count;
         let tryTime = 0;
+        let countLocal = count;
         do {
+          if(countLocal < count) {
+            countLocal = count;
+          }
           if (!listProxy[countLocal]) {
             countLocal = 0;
           }
