@@ -7,7 +7,8 @@
     "start": "electron-forge start",
     "test": "echo \"Error: no test specified\" && exit 1",
     "package": "electron-forge package",
-    "make": "electron-forge make"
+    "make": "electron-forge make",
+    "dist": "electron-builder"
   },
   "author": "TaiPC",
   "license": "ISC",
@@ -19,7 +20,21 @@
     "@electron-forge/maker-zip": "^7.3.0",
     "@electron-forge/plugin-auto-unpack-natives": "^7.3.0",
     "@electron-forge/plugin-fuses": "^7.3.0",
-    "electron": "^29.1.1"
+    "electron": "^29.1.1",
+    "electron-builder": "^22.5.1",
+    "electron-rebuild": "^2.0.1"
+  },
+  "build": {
+    "appId": "tai.pc.chbm",
+    "productName": "CHBM AppleID (2024. v1)",
+    "target": "nsis",
+    "nsis": {
+      "allowToChangeInstallationDirectory": true,
+      "oneClick": false
+    },
+    "extraResources": [
+      "./extraResources/**"
+    ]
   },
   "dependencies": {
     "electron-squirrel-startup": "^1.0.0",
