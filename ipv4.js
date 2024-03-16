@@ -4,7 +4,7 @@ const { GSASRPAuthenticator } = require('./GSASRPAuthenticator');
 const { randomString, randomBirthdate } = require('./helper');
 
 const instance = axios.create({
-  timeout: 20000
+  timeout: 30000
 })
 
 const getFrameId = () => {
