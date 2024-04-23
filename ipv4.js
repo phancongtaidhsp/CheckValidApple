@@ -194,18 +194,18 @@ const option = (proxy, sessionId, sessionToken, widgetId) => {
 
     instance.request(config)
       .then((response) => {
-        if (response?.data?.security?.birthday) {
+        if (response?.data?.security?.birthday || (response?.data?.repairMissingData && response?.data?.repairMissingData?.includes("birthday"))) {
           resolve({ type: "birthday", headers: response.headers })
-        } else if (response?.data?.security?.questions) {
+        } else if (response?.data?.security?.questions || (response?.data?.repairMissingData && response?.data?.repairMissingData?.includes("questions"))) {
           resolve({ type: "questions", headers: response.headers })
         } else {
           resolve(false)
         }
       })
       .catch((error) => {
-        if (error?.response?.data?.security?.birthday) {
+        if (error?.response?.data?.security?.birthday || (error?.response?.data?.repairMissingData && error?.response?.data?.repairMissingData?.includes("birthday"))) {
           resolve({ type: "birthday", headers: response.headers })
-        } else if (error?.response?.data?.security?.questions) {
+        } else if (error?.response?.data?.security?.questions || (error?.response?.data?.repairMissingData && error?.response?.data?.repairMissingData?.includes("questions"))) {
           resolve({ type: "questions", headers: response.headers })
         } else {
           resolve(false)
@@ -454,7 +454,7 @@ const CHBMAppleID = (email, pass, proxyString) => {
 }
 
 // (async () => {
-//   let a = await CHBMAppleID("pamuk_maco@hotmail.com", "tL0FWeaClh7@", "38.174.39.200:3128");
+//   let a = await CHBMAppleID("titouta2009@hotmail.com", "9sY0O9wTcv3@", "109.236.86.4:15987");
 //   console.log(a);
 // })()
 
