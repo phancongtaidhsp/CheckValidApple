@@ -92,26 +92,22 @@ const run = async function (pathFileMail, pathFileProxy, thread) {
       (async() => {
         let vInfo = {};
         let tryTime = 0;
-        let countLocal = count;
         do {
-          if(countLocal < count) {
-            countLocal = count;
-          }
-          if (!listProxy[countLocal]) {
-            countLocal = 0;
+          if (!listProxy[count]) {
             count = 0;
           }
-          vInfo = await CHBMAppleID(mail, pass, listProxy[countLocal]);
+          vInfo = await CHBMAppleID(mail, pass, listProxy[count]);
           if (vInfo.status == "checked") {
             objectThread[ix] = { mail, checking: false, checked: vInfo.status === "checked" }
             let result = "\n" + Object.values(vInfo).join("|")
             fs.appendFileSync(out, result);
             win.webContents.send('success', 1, pause);
             lr.resume();
+          } else {
+            count++;
+            tryTime++;
           }
-          countLocal++;
-          tryTime++;
-        } while (vInfo.status != 'checked' && tryTime < 10 && !pause);
+        } while (vInfo.status != 'checked' && tryTime < 5 && !pause);
         if(vInfo?.status != 'checked') {
           objectThread[ix] = { mail, checking: false, checked: vInfo.status === "checked" }
           let result = "\n" + Object.values({...vInfo, status: "not checked"}).join("|")
