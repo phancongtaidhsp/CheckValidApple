@@ -108,6 +108,7 @@ const loginIdApple = (proxy, proof) => {
         resolve({ cookies: response?.headers['set-cookie'], headers: response?.headers })
       })
       .catch((error) => {
+        console.log(error);
         if (error?.response?.status == 409) {
           resolve("CHBM")
         } else if (error?.response?.status == 401) {
@@ -434,7 +435,13 @@ const CHBMAppleID = (email, pass, proxyString) => {
     const proxy = {
       protocol: 'http',
       host: proxyArr[0],
-      port: parseInt(proxyArr[1])
+      port: parseInt(proxyArr[1]),
+      ...(proxyArr[2] && {
+        auth: {
+          username: proxyArr[2],
+          password: proxyArr[3],
+        }
+      })
     }
     let birthday = '';
     try {
@@ -557,10 +564,10 @@ const CHBMAppleID = (email, pass, proxyString) => {
   })
 }
 
-// (async () => {
-//   let a = await CHBMAppleID("gerryli1976@hotmail.com", "gYMCFKQhAO2@", "109.236.86.4:15987");
-//   console.log(a);
-// })()
+(async () => {
+  let a = await CHBMAppleID("kjbmwnm@outlook.cz", "Lumiong47@", "89.38.96.61:10183");
+  console.log(a);
+})()
 
 module.exports = {
   CHBMAppleID
