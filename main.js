@@ -99,7 +99,7 @@ const run = async function (pathFileMail, pathFileProxy, thread) {
           vInfo = await CHBMAppleID(mail, pass, listProxy[count]);
           if (vInfo.status == "checked") {
             objectThread[ix] = { mail, checking: false, checked: vInfo.status === "checked" }
-            let result = "\n" + Object.values(vInfo).join("|")
+            let result = Object.values(vInfo).join("|") + "\n";
             fs.appendFileSync(out, result);
             win.webContents.send('success', 1, pause);
             lr.resume();
@@ -110,7 +110,7 @@ const run = async function (pathFileMail, pathFileProxy, thread) {
         } while (vInfo.status != 'checked' && tryTime < 5 && !pause);
         if(vInfo?.status != 'checked') {
           objectThread[ix] = { mail, checking: false, checked: vInfo.status === "checked" }
-          let result = "\n" + Object.values({...vInfo, status: "not checked"}).join("|")
+          let result = Object.values({...vInfo, status: "not checked"}).join("|") + "\n";
           fs.appendFileSync(out, result);
           win.webContents.send('fail', 1, pause);
           lr.resume();

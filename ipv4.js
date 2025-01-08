@@ -108,7 +108,6 @@ const loginIdApple = (proxy, proof) => {
         resolve({ cookies: response?.headers['set-cookie'], headers: response?.headers })
       })
       .catch((error) => {
-        console.log(error);
         if (error?.response?.status == 409) {
           resolve("CHBM")
         } else if (error?.response?.status == 401) {
@@ -202,6 +201,8 @@ const option = (proxy, sessionId, sessionToken, widgetId) => {
         } else if (response?.data?.repairContext?.repairType) {
           if (response?.data?.repairContext?.repairType == "crossBorderPrivacyConsent") {
             resolve({ type: "crossBorderPrivacyConsent", headers: response.headers })
+          } else if (response?.data?.repairContext?.repairType == "adiToAspPrivacyConsent") {
+            resolve({ type: "adiToAspPrivacyConsent", headers: response.headers })
           } else {
             resolve({ type: "repairType", headers: response.headers })
           }
@@ -260,6 +261,27 @@ const consent = (proxy, type, aidsp, sessionToken, scnt, widgetId) => {
         "repairType": "crossBorderPrivacyConsent",
         "repairItems": [
           "crossBorderPrivacyConsent"
+        ]
+      }
+    });
+  }
+  if (type === "adiToAspPrivacyConsent") {
+    data = JSON.stringify({
+      "account": {
+        "preferences": {
+          "privacyPreferences": {
+            "adiToAspPrivacyNoticeAccepted": true
+          }
+        }
+      },
+      "completedSteps": [],
+      "requiredSteps": [
+        "adiToAspPrivacyConsent"
+      ],
+      "repairContext": {
+        "repairType": "adiToAspPrivacyConsent",
+        "repairItems": [
+          "adiToAspPrivacyConsent"
         ]
       }
     });
@@ -446,13 +468,13 @@ const CHBMAppleID = (email, pass, proxyString) => {
     let birthday = '';
     try {
       setTimeout(() => {
-        resolve({
+        return resolve({
           mail: email,
           pass: pass,
           proxy: proxyString,
           status: 'not checked'
         })
-      }, 300000);
+      }, 90000);
       for (let index = 0; index < 3; index++) {
         let widgetKey = await getConfigRequest(proxy, frame_id);
         if (!widgetKey) {
@@ -496,7 +518,7 @@ const CHBMAppleID = (email, pass, proxyString) => {
               if (optionHeader) {
                 let type = optionHeader.type;
                 optionHeader = optionHeader.headers;
-                if (type == 'repairType' || type == 'crossBorderPrivacyConsent') {
+                if (type == 'repairType' || type == 'crossBorderPrivacyConsent' || type == 'adiToAspPrivacyConsent') {
                   await consent(proxy, type, aidsp, optionHeader['x-apple-session-token'], optionHeader['scnt'], widgetKey);
                   continue;
                 } else if (type == 'birthday') {
@@ -564,10 +586,10 @@ const CHBMAppleID = (email, pass, proxyString) => {
   })
 }
 
-(async () => {
-  let a = await CHBMAppleID("kjbmwnm@outlook.cz", "Lumiong47@", "89.38.96.61:10183");
-  console.log(a);
-})()
+// (async () => {
+//   let a = await CHBMAppleID("cyj9969@yahoo.com", "FOqo75@sbgki", "datacenter-ww.lightningproxies.net:3500");
+//   console.log(a);
+// })()
 
 module.exports = {
   CHBMAppleID
