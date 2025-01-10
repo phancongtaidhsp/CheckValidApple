@@ -54,7 +54,7 @@ const run = async function (pathFileMail, pathFileProxy, thread) {
   let listProxy = fs.readFileSync(pathFileProxy, 'utf8');
   listProxy = listProxy.split(/\r?\n/);
   let count = 0;
-  let out = `${__dirname}\\..\\extraResources\\output.txt`;
+  let out = `${__dirname}\\..\\extraResources\\CHBM\\output.txt`;
   let objectThread = {};
   let startIndex = 0;
   lr = new LineByLineReader(pathFileMail, {
@@ -148,6 +148,11 @@ function isFileExists(pathFile) {
 }
 
 ipc.on('start', async function (event, pathFileMail, pathFileProxy, thread) {
+  let pathFolder = `${__dirname}\\..\\extraResources\\CHBM`;
+  let incompleteFolder = isFileExists(pathFolder);
+  if (incompleteFolder) {
+    fs.mkdirSync(pathFolder);
+  }
   pause = false;
   interval = setInterval(() => {
     startTime++;
