@@ -286,6 +286,10 @@ const consent = (proxy, type, aidsp, sessionToken, scnt, widgetId) => {
       }
     });
   }
+  let url = 'https://appleid.apple.com/account/manage/repair/privacy/consent';
+  if (type === "adiToAspPrivacyConsent") {
+    url = 'https://appleid.apple.com/account/manage/repair/privacy/consent/adiToAspPrivacyConsent';
+  }
   return new Promise((resolve) => {
     let config = {
       method: 'post',
@@ -519,6 +523,10 @@ const CHBMAppleID = (email, pass, proxyString) => {
                 let type = optionHeader.type;
                 optionHeader = optionHeader.headers;
                 if (type == 'repairType' || type == 'crossBorderPrivacyConsent' || type == 'adiToAspPrivacyConsent') {
+                  if (type == 'crossBorderPrivacyConsent' && index > 1) {
+                    type = 'repairType';
+                  }
+                  console.log(type);
                   await consent(proxy, type, aidsp, optionHeader['x-apple-session-token'], optionHeader['scnt'], widgetKey);
                   continue;
                 } else if (type == 'birthday') {
@@ -551,7 +559,7 @@ const CHBMAppleID = (email, pass, proxyString) => {
                   mail: email,
                   pass: pass,
                   proxy: proxyString,
-                  status: 'checked',
+                  status: 'not checked',
                   note: 'custom'
                 })
               }
@@ -586,10 +594,10 @@ const CHBMAppleID = (email, pass, proxyString) => {
   })
 }
 
-// (async () => {
-//   let a = await CHBMAppleID("cyj9969@yahoo.com", "FOqo75@sbgki", "datacenter-ww.lightningproxies.net:3500");
-//   console.log(a);
-// })()
+(async () => {
+  let a = await CHBMAppleID("harrykim_korea@yahoo.com", "HRrs75@dtkmq", "datacenter-ww.lightningproxies.net:3500");
+  console.log(a);
+})()
 
 module.exports = {
   CHBMAppleID

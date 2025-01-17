@@ -2,7 +2,8 @@ const { contextBridge, ipcRenderer } = require('electron/renderer')
 
 contextBridge.exposeInMainWorld('electronAPI', {
   start: (pathFileMail, pathFileProxy, thread) => ipcRenderer.send('start', pathFileMail, pathFileProxy, thread),
-  pause: () => ipcRenderer.send('pause')
+  pause: () => ipcRenderer.send('pause'),
+  result: (pathFileMail) => ipcRenderer.send('result', pathFileMail)
 })
 
 window.addEventListener('DOMContentLoaded', () => {
@@ -42,6 +43,14 @@ window.addEventListener('DOMContentLoaded', () => {
   })
   ipcRenderer.on('disable', function (e, isDisable) {
     document.getElementById('start').disabled = isDisable;
+  })
+  ipcRenderer.on('result', function (e, isSuccess) {
+    if (isSuccess) {
+      showThongBao('alert-success', 'Xuất kết quả thành công')
+    }
+    else {
+      showThongBao('alert-danger', 'Xuất kết quả thất bại')
+    }
   })
   ipcRenderer.on('time', function (e, time) {
     let h, m, s

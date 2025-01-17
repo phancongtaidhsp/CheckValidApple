@@ -4,6 +4,7 @@ const electron = require('electron');
 const LineByLineReader = require('line-by-line');
 const fs = require('fs-extra');
 const { CHBMAppleID } = require('./ipv4');
+const { sampleSize } = require('lodash');
 const ipc = electron.ipcMain;
 
 let win;
@@ -93,10 +94,8 @@ const run = async function (pathFileMail, pathFileProxy, thread) {
         let vInfo = {};
         let tryTime = 0;
         do {
-          if (!listProxy[count]) {
-            count = 0;
-          }
-          vInfo = await CHBMAppleID(mail, pass, listProxy[count]);
+          let proxy = sampleSize(listProxy, 1)[0];
+          vInfo = await CHBMAppleID(mail, pass, proxy);
           if (vInfo.status == "checked") {
             objectThread[ix] = { mail, checking: false, checked: vInfo.status === "checked" }
             let result = Object.values(vInfo).join("|") + "\n";
@@ -104,7 +103,6 @@ const run = async function (pathFileMail, pathFileProxy, thread) {
             win.webContents.send('success', 1, pause);
             lr.resume();
           } else {
-            count++;
             tryTime++;
           }
         } while (vInfo.status != 'checked' && tryTime < 5 && !pause);
@@ -169,4 +167,28 @@ ipc.on('pause', async function (event) {
     }
     win.webContents.send('info', "Đang tạm dừng...Vui lòng chờ...", true);
   }
+})
+
+ipc.on('result', function (event, pathFileMail) {
+  let output = `${__dirname}\\..\\extraResources\\CHBM\\output.txt`;
+  let incompleteFile1 = isFileExists(pathFileMail);
+  if (incompleteFile1) {
+    win.webContents.send('checkfiles', incompleteFile1);
+    return;
+  }
+  let listMail = fs.readFileSync(pathFileMail, 'utf8');
+  listMail = listMail.split(/\r?\n/);
+  let listMailOutput = fs.readFileSync(output, 'utf8');
+  listMailOutput = listMailOutput.split(/\r?\n/);
+  // remove all mail success
+  for (const maildata of listMailOutput) {
+    let mail = maildata.split('|')?.[0];
+    let indexMail = listMail.findIndex(m => m.includes(mail));
+    if (maildata.includes("|checked|") && indexMail >= 0) {
+      listMail = [...listMail.slice(0, indexMail), ...listMail.slice(indexMail + 1)];
+    }
+  }
+  
+  fs.writeFileSync(pathFileMail, listMail.join('\n'), 'utf8');
+  win.webContents.send('result', true);
 })
