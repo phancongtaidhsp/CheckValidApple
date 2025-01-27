@@ -56,6 +56,8 @@ const run = async function (pathFileMail, pathFileProxy, thread) {
   listProxy = listProxy.split(/\r?\n/);
   let count = 0;
   let out = `${__dirname}\\..\\extraResources\\CHBM\\output.txt`;
+  let success = `${__dirname}\\..\\extraResources\\CHBM\\success.txt`;
+  let fail = `${__dirname}\\..\\extraResources\\CHBM\\fail.txt`;
   let objectThread = {};
   let startIndex = 0;
   lr = new LineByLineReader(pathFileMail, {
@@ -99,6 +101,11 @@ const run = async function (pathFileMail, pathFileProxy, thread) {
           if (vInfo.status == "checked") {
             objectThread[ix] = { mail, checking: false, checked: vInfo.status === "checked" }
             let result = Object.values(vInfo).join("|") + "\n";
+            if (vInfo.note == "successfully") {
+              fs.appendFileSync(success, result);
+            } else {
+              fs.appendFileSync(fail, result);
+            }
             fs.appendFileSync(out, result);
             win.webContents.send('success', 1, pause);
             lr.resume();

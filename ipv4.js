@@ -108,11 +108,14 @@ const loginIdApple = (proxy, proof) => {
         resolve({ cookies: response?.headers['set-cookie'], headers: response?.headers })
       })
       .catch((error) => {
+        // console.log(error?.response);
         if (error?.response?.status == 409) {
           resolve("CHBM")
-        } else if (error?.response?.status == 401) {
-          resolve("sai pass")
-        } else if (error?.response?.status == 412) {
+        } 
+        // else if (error?.response?.status == 401) {
+        //   resolve("sai pass")
+        // } 
+        else if (error?.response?.status == 412) {
           resolve({ cookies: error?.response?.headers['set-cookie'], headers: error?.response?.headers })
         } else if (error?.response?.status == 403) {
           resolve('locked')
@@ -594,10 +597,10 @@ const CHBMAppleID = (email, pass, proxyString) => {
   })
 }
 
-(async () => {
-  let a = await CHBMAppleID("harrykim_korea@yahoo.com", "HRrs75@dtkmq", "datacenter-ww.lightningproxies.net:3500");
-  console.log(a);
-})()
+// (async () => {
+//   let a = await CHBMAppleID("kentuckycolonel_97@yahoo.com", "TBup39@ilajl", "datacenter-ww.lightningproxies.net:3500");
+//   console.log(a);
+// })()
 
 module.exports = {
   CHBMAppleID
