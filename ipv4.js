@@ -298,7 +298,7 @@ const consent = (proxy, type, aidsp, sessionToken, scnt, widgetId) => {
       method: 'post',
       maxBodyLength: Infinity,
       proxy,
-      url: 'https://appleid.apple.com/account/manage/repair/privacy/consent',
+      url,
       headers: {
         'Accept': 'application/json, text/javascript, */*; q=0.01',
         'Accept-Language': 'en-US,en;q=0.9',
@@ -529,7 +529,6 @@ const CHBMAppleID = (email, pass, proxyString) => {
                   if (type == 'crossBorderPrivacyConsent' && index > 1) {
                     type = 'repairType';
                   }
-                  console.log(type);
                   await consent(proxy, type, aidsp, optionHeader['x-apple-session-token'], optionHeader['scnt'], widgetKey);
                   continue;
                 } else if (type == 'birthday') {
