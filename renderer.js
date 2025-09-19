@@ -3,6 +3,7 @@ document.getElementById('start').addEventListener('click', function () {
   document.getElementById('thongbao').classList.add('hidden')
   let pathFileMail = document.getElementById('filepathmail').value
   let pathFileProxy = document.getElementById('filepathproxy').value
+  let password = document.getElementById('password').value
   if(pathFileMail[0] == '"') {
     pathFileMail = pathFileMail.substring(1)
   }
@@ -16,7 +17,7 @@ document.getElementById('start').addEventListener('click', function () {
     pathFileProxy = pathFileProxy.substring(0, pathFileProxy.length - 1)
   }
   let thread = document.getElementById('thread').value;
-  window.electronAPI.start(pathFileMail, pathFileProxy, thread);
+  window.electronAPI.start(pathFileMail, pathFileProxy, password, thread);
 });
 
 document.getElementById('pause').addEventListener('click', function () {

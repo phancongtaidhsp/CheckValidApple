@@ -5,6 +5,7 @@ const LineByLineReader = require('line-by-line');
 const fs = require('fs-extra');
 const { CHBMAppleID } = require('./ipv4');
 const { sampleSize } = require('lodash');
+const { sendMail } = require('./apple');
 const ipc = electron.ipcMain;
 
 let win;
@@ -40,7 +41,7 @@ app.on('window-all-closed', () => {
   }
 })
 
-const run = async function (pathFileMail, pathFileProxy, thread) {
+const run = async function (pathFileMail, pathFileProxy, password = 'dII2Rk@h&pTepzkc', thread) {
   let incompleteFile1 = isFileExists(pathFileMail);
   let incompleteFile2 = isFileExists(pathFileMail);
   if (incompleteFile1) {
@@ -70,7 +71,20 @@ const run = async function (pathFileMail, pathFileProxy, thread) {
   });
 
   lr.on('line', async function (info) {
-    const [mail, pass] = info.split("|");
+    const [mail, pass, question1, answer1, question2, answer2, question3, answer3, birthday] = info.split("|");
+    let birth = new Date(birthday);
+    let day = birth.getDate();
+    let month = birth.getMonth() + 1;
+    let year = `${birth.getFullYear()}`;
+    if (day < 10) day = `0${day}`;
+    if (month < 10) month = `0${month}`;
+    birth = { day, month, year };
+    let answers = {
+      [question1]: answer1,
+      [question2]: answer2,
+      [question3]: answer3
+    }
+
     let ix = startIndex;
     if (pause) {
       isDone = false;
@@ -92,12 +106,12 @@ const run = async function (pathFileMail, pathFileProxy, thread) {
     }
     objectThread[ix] = { mail, checking: true, checked: false }
     try {
-      (async() => {
+      (async () => {
         let vInfo = {};
         let tryTime = 0;
         do {
           let proxy = sampleSize(listProxy, 1)[0];
-          vInfo = await CHBMAppleID(mail, pass, proxy);
+          vInfo = await sendMail(mail, password, birth, answers, proxy);
           if (vInfo.status == "checked") {
             objectThread[ix] = { mail, checking: false, checked: vInfo.status === "checked" }
             let result = Object.values(vInfo).join("|") + "\n";
@@ -113,9 +127,9 @@ const run = async function (pathFileMail, pathFileProxy, thread) {
             tryTime++;
           }
         } while (vInfo.status != 'checked' && tryTime < 5 && !pause);
-        if(vInfo?.status != 'checked') {
+        if (vInfo?.status != 'checked') {
           objectThread[ix] = { mail, checking: false, checked: vInfo.status === "checked" }
-          let result = Object.values({...vInfo, status: "not checked"}).join("|") + "\n";
+          let result = Object.values({ ...vInfo, status: "not checked" }).join("|") + "\n";
           fs.appendFileSync(out, result);
           win.webContents.send('fail', 1, pause);
           lr.resume();
@@ -152,7 +166,7 @@ function isFileExists(pathFile) {
   return false;
 }
 
-ipc.on('start', async function (event, pathFileMail, pathFileProxy, thread) {
+ipc.on('start', async function (event, pathFileMail, pathFileProxy, password, thread) {
   let pathFolder = `${__dirname}\\..\\extraResources\\CHBM`;
   let incompleteFolder = isFileExists(pathFolder);
   if (incompleteFolder) {
@@ -163,7 +177,7 @@ ipc.on('start', async function (event, pathFileMail, pathFileProxy, thread) {
     startTime++;
     win.webContents.send('time', startTime);
   }, 1000);
-  run(pathFileMail, pathFileProxy, thread);
+  run(pathFileMail, pathFileProxy, password, thread);
 })
 
 ipc.on('pause', async function (event) {
@@ -195,7 +209,7 @@ ipc.on('result', function (event, pathFileMail) {
       listMail = [...listMail.slice(0, indexMail), ...listMail.slice(indexMail + 1)];
     }
   }
-  
+
   fs.writeFileSync(pathFileMail, listMail.join('\n'), 'utf8');
   win.webContents.send('result', true);
 })
