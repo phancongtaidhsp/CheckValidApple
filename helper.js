@@ -385,11 +385,11 @@ const getCaptchaResultNope = async (proxy, apiKey, imageData) => {
     if (idCaptcha) {
       break;
     }
-    await delay(2000);
+    await delay(1000);
   }
   if (idCaptcha) {
     let onProxy = true;
-    for (let i = 0; i < 120; i++) {
+    for (let i = 0; i < 60; i++) {
       const ua = {
         "httplib": "node-fetch",
         "lang": "node",
@@ -425,7 +425,7 @@ const getCaptchaResultNope = async (proxy, apiKey, imageData) => {
           onProxy = false;
         }
       }
-      await delay(2000);
+      await delay(1000);
     }
   }
   return null;

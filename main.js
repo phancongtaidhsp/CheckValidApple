@@ -56,9 +56,9 @@ const run = async function (pathFileMail, pathFileProxy, password = 'dII2Rk@h&pT
   let listProxy = fs.readFileSync(pathFileProxy, 'utf8');
   listProxy = listProxy.split(/\r?\n/);
   let count = 0;
-  let out = `${__dirname}\\..\\extraResources\\CHBM\\output.txt`;
-  let success = `${__dirname}\\..\\extraResources\\CHBM\\success.txt`;
-  let fail = `${__dirname}\\..\\extraResources\\CHBM\\fail.txt`;
+  let out = `${__dirname}\\..\\extraResources\\LoginDoiPassCHBMApple\\output.txt`;
+  let success = `${__dirname}\\..\\extraResources\\LoginDoiPassCHBMApple\\success.txt`;
+  let fail = `${__dirname}\\..\\extraResources\\LoginDoiPassCHBMApple\\fail.txt`;
   let objectThread = {};
   let startIndex = 0;
   lr = new LineByLineReader(pathFileMail, {
@@ -73,8 +73,8 @@ const run = async function (pathFileMail, pathFileProxy, password = 'dII2Rk@h&pT
   lr.on('line', async function (info) {
     const [mail, pass, question1, answer1, question2, answer2, question3, answer3, birthday] = info.split("|");
     let birth = new Date(birthday);
-    let day = birth.getDate();
-    let month = birth.getMonth() + 1;
+    let day = `${birth.getDate()}`;
+    let month = `${birth.getMonth() + 1}`;
     let year = `${birth.getFullYear()}`;
     if (day < 10) day = `0${day}`;
     if (month < 10) month = `0${month}`;
@@ -116,12 +116,14 @@ const run = async function (pathFileMail, pathFileProxy, password = 'dII2Rk@h&pT
             objectThread[ix] = { mail, checking: false, checked: vInfo.status === "checked" }
             let result = Object.values(vInfo).join("|") + "\n";
             if (vInfo.note == "successfully") {
+              result = [mail, password, question1, answer1, question2, answer2, question3, answer3, birthday].join("|") + "\n";
               fs.appendFileSync(success, result);
+              win.webContents.send('success', 1, pause);
             } else {
               fs.appendFileSync(fail, result);
+              win.webContents.send('fail', 1, pause);
             }
             fs.appendFileSync(out, result);
-            win.webContents.send('success', 1, pause);
             lr.resume();
           } else {
             tryTime++;
@@ -167,7 +169,7 @@ function isFileExists(pathFile) {
 }
 
 ipc.on('start', async function (event, pathFileMail, pathFileProxy, password, thread) {
-  let pathFolder = `${__dirname}\\..\\extraResources\\CHBM`;
+  let pathFolder = `${__dirname}\\..\\extraResources\\LoginDoiPassCHBMApple`;
   let incompleteFolder = isFileExists(pathFolder);
   if (incompleteFolder) {
     fs.mkdirSync(pathFolder);
@@ -191,7 +193,7 @@ ipc.on('pause', async function (event) {
 })
 
 ipc.on('result', function (event, pathFileMail) {
-  let output = `${__dirname}\\..\\extraResources\\CHBM\\output.txt`;
+  let output = `${__dirname}\\..\\extraResources\\LoginDoiPassCHBMApple\\output.txt`;
   let incompleteFile1 = isFileExists(pathFileMail);
   if (incompleteFile1) {
     win.webContents.send('checkfiles', incompleteFile1);
