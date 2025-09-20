@@ -3,7 +3,7 @@ const cheerio = require('cheerio');
 const { getCaptchaResultNope } = require('./helper');
 
 const instance = axios.create({
-  timeout: 15000,
+  timeout: 30000,
 })
 
 const getConfig = (proxy) => {
@@ -66,6 +66,7 @@ const getConfig = (proxy) => {
         resolve([sstt, ssttt, ifssp, xAppleWebToken]);
       })
       .catch((error) => {
+        console.log(error);
         resolve([null, null, null, null]);
       });
   })
@@ -170,10 +171,11 @@ const sendCaptcha = (proxy, email, xAppleWebToken, ifssp, ssttt, captchaId, capt
           } else if (jsonString.includes("not valid or not supported")) {
             resolve("This Apple ID is not valid or not supported")
           } else {
-            resolve([null, null])
+            console.log(jsonString);
+            resolve(null)
           }
         } else {
-          resolve([null, null]);
+          resolve(null);
         }
       })
       .catch((error) => {
@@ -203,10 +205,11 @@ const sendCaptcha = (proxy, email, xAppleWebToken, ifssp, ssttt, captchaId, capt
           } else if (jsonString.includes("not valid or not supported")) {
             resolve("This Apple ID is not valid or not supported")
           } else {
-            resolve([null, null])
+            console.log(jsonString);
+            resolve(null)
           }
         } else {
-          resolve([null, null]);
+          resolve(null);
         }
       });
   })
@@ -238,9 +241,11 @@ const verifyCaptcha = (proxy, ifssp, xAppleWebToken, ssttt, location) => {
     };
     instance.request(options)
       .then(function (response) {
-        let emailAddress = null;
+        let options = null;
         let sstt = null;
         let jsonString = JSON.stringify(response?.data);
+        console.log("verifyCaptcha json string...");
+        console.log(jsonString);
         if (jsonString.includes("is not active")) {
           resolve("This Apple ID is not active")
         } else if (jsonString.includes("trustedPhones")) {
@@ -249,13 +254,13 @@ const verifyCaptcha = (proxy, ifssp, xAppleWebToken, ssttt, location) => {
           resolve("wrong captcha")
         } else if (jsonString.includes("not valid or not supported")) {
           resolve("This Apple ID is not valid or not supported")
-        } else if (response?.data?.emailAddress) {
-          emailAddress = response?.data?.emailAddress;
+        } else if (response?.data?.options) {
+          options = response?.data?.options;
           sstt = response?.data?.sstt;
         } else {
           sstt = response?.data?.sstt;
         }
-        resolve([emailAddress, sstt]);
+        resolve([options, sstt]);
       })
       .catch((error) => {
         console.log("verifyCaptcha error...");
@@ -465,7 +470,10 @@ const verifyBirthday = (proxy, ifssp, xAppleWebToken, ssttt, location, birthday)
         resolve([ssttt, xAppleWebToken]);
       })
       .catch((error) => {
-        if (error?.response?.status == 302) {
+        let jsonString = JSON.stringify(error?.response?.data);
+        if (jsonString && jsonString.includes("answer does not match the security information on file")) {
+          resolve("sai birthday");
+        } else if (error?.response?.status == 302) {
           let location = null;
           let xAppleWebToken = null;
           location = error?.response?.headers?.location;
@@ -565,11 +573,17 @@ const verifyQuestion = (proxy, ifssp, xAppleWebToken, ssttt, location, questions
         }
         if (response?.data?.questions) {
           questions = response.data.questions.map(q => ({ id: q.id, number: q.number, question: q.question }));
+        } else {
+          console.log("response verify questions...");
+          console.log(response);
         }
         resolve([ssttt, xAppleWebToken, questions]);
       })
       .catch((error) => {
-        if (error?.response?.status == 302) {
+        let jsonString = JSON.stringify(error?.response?.data);
+        if (jsonString && jsonString.includes('your answers does not match the security information on file')) {
+          resolve("sai chbm");
+        } else if (error?.response?.status == 302) {
           let location = null;
           let xAppleWebToken = null;
           let ssttt = null;
@@ -590,7 +604,6 @@ const verifyQuestion = (proxy, ifssp, xAppleWebToken, ssttt, location, questions
           }
           resolve([location, xAppleWebToken, ssttt]);
         } else {
-          console.log(error);
           resolve([null, null]);
         }
       });
@@ -858,8 +871,10 @@ const getResetOption = (proxy, location, ifssp, xAppleWebToken, ssttt) => {
           location = error?.response?.headers?.location;
           sstt = location.split("sstt=")?.[1];
         }
-        console.log("errordw...");
-        console.log(error);
+        if (error?.response?.data) {
+          console.log("error response data getResetOption...")
+          console.log(JSON.stringify(error?.response?.data));
+        }
         resolve([xAppleWebToken, sstt, location])
       });
   })
@@ -901,11 +916,15 @@ const changePasswordReq = (proxy, password, ifssp, xAppleWebToken, ssttt) => {
         if (response?.data?.resetCompleted) {
           resolve("successfully");
         } else {
+          console.log("response?.data?.changepass");
+          console.log(response?.data);
           resolve(null);
         }
       })
       .catch((error) => {
-        resolve(null);
+        console.log("error change pass");
+        console.log(JSON.stringify(error?.response?.data));
+        resolve(error?.response?.data?.service_errors?.[0]?.message)
       });
   })
 }
@@ -923,10 +942,9 @@ const sendMail = async (email, password, birthday, answers, proxyString) => {
         })
       }
       let countTry = 0;
-      let flagRetryCaptcha = false;
-      let location, emailAddress = null;
+      let location, options = null;
       let [sstt, ssttt, ifssp, xAppleWebToken] = [null, null, null, null];
-      for (let i = 0; i < 3; i++) {
+      for (let i = 0; i < 5; i++) {
         [sstt, ssttt, ifssp, xAppleWebToken] = await getConfig(proxy);
         if (sstt && ssttt && ifssp && xAppleWebToken) {
           break;
@@ -936,123 +954,120 @@ const sendMail = async (email, password, birthday, answers, proxyString) => {
         countTry++;
         console.log("countTry " + email + "...");
         console.log(countTry);
-        flagRetryCaptcha = false;
         if (sstt && ssttt && ifssp && xAppleWebToken) {
           let [captchaImage, captchaId, captchaToken] = await getCaptchaReq(proxy, xAppleWebToken, ifssp, ssttt);
           if (captchaImage && captchaId && captchaToken) {
-            let textCaptcha = await getCaptchaResultNope(null, "okabyf0t8m_BLVGCZCW", captchaImage);
+            console.log("go to nope captcha service...");
+            let textCaptcha = await getCaptchaResultNope(proxy, "okabyf0t8m_BLVGCZCW", captchaImage);
             console.log("textCaptcha...");
             console.log(textCaptcha);
             if (textCaptcha) {
               const resSendCaptcha = await sendCaptcha(proxy, email, xAppleWebToken, ifssp, ssttt, captchaId, captchaToken, textCaptcha);
               console.log("resSendCaptcha...");
               console.log(resSendCaptcha);
-              if (resSendCaptcha === "wrong captcha") {
-                flagRetryCaptcha = true;
-              } else if (Array.isArray(resSendCaptcha)) {
+              if (Array.isArray(resSendCaptcha)) {
                 [location, xAppleWebToken] = resSendCaptcha;
                 if (location) {
                   ssttt = location.split("sstt=")?.[1];
-                  for (let i = 0; i < 3; i++) {
+                  for (let i = 0; i < 5; i++) {
                     const verifyCaptRes = await verifyCaptcha(proxy, ifssp, xAppleWebToken, ssttt, location);
                     console.log("verifyCaptRes...");
                     console.log(verifyCaptRes);
                     if (Array.isArray(verifyCaptRes)) {
-                      [emailAddress, sstt] = verifyCaptRes;
+                      [options, sstt] = verifyCaptRes;
                       ssttt = encodeURIComponent(sstt);
-                      console.log("emailAddress...");
-                      console.log(emailAddress);
-                      if (emailAddress) {
-                        let firstC = emailAddress[0].toLowerCase();
-                        let firstCEmail = email[0].toLowerCase();
-                        let firstCAfter = emailAddress.split("@")?.[1]?.[0]?.toLowerCase();
-                        let firstCAfterEmail = email.split("@")?.[1]?.[0]?.toLowerCase();
-                        if (firstC == firstCEmail && firstCAfter == firstCAfterEmail) {
-                          console.log("inside...");
-                          [location, xAppleWebToken] = await sendRequestMail(proxy, ifssp, xAppleWebToken, ssttt);
-                          if (emailAddress) {
-                            console.log("verifyBirthday...");
-                            [ssttt, xAppleWebToken] = await verifyBirthday(proxy, ifssp, xAppleWebToken, ssttt, location);
-                            [location, xAppleWebToken] = await verifyBirthday(proxy, ifssp, xAppleWebToken, ssttt, '/password/verify/birthday', birthday);
-                            if (!location) {
-                              return resolve({
-                                mail: email,
-                                pass: password,
-                                proxy: proxyString,
-                                status: 'checked',
-                                note: 'sai birthday'
-                              })
-                            }
-                            let questions = [];
-                            [ssttt, xAppleWebToken, questions] = await verifyQuestion(proxy, ifssp, xAppleWebToken, ssttt, location);
-                            console.log("questions1....");
-                            console.log(questions);
-                            if (questions?.length > 0) {
-                              questions = questions.map(q => ({ ...q, answer: answers[q.question] }))
-                            } else {
-                              return resolve({
-                                mail: email,
-                                pass: password,
-                                proxy: proxyString,
-                                status: 'checked',
-                                note: 'sai chbm'
-                              })
-                            }
-                            console.log("questions2....");
-                            console.log(questions);
-                            [location, xAppleWebToken, ssttt] = await verifyQuestion(proxy, ifssp, xAppleWebToken, ssttt, '/password/verify/questions', questions);
-                            if (!location) {
-                              return resolve({
-                                mail: email,
-                                pass: password,
-                                proxy: proxyString,
-                                status: 'checked',
-                                note: 'sai chbm'
-                              })
-                            }
-                            [xAppleWebToken, ssttt, location] = await getResetOption(proxy, location, ifssp, xAppleWebToken, ssttt);
-                            console.log("getResetOption result...");
-                            if (xAppleWebToken && location && ssttt) {
-                              console.log("90%...");
-                              if (location.includes('/password/unlock')) {
-                                [xAppleWebToken, location, ssttt] = await sendResetOption(proxy, ifssp, xAppleWebToken, ssttt);
-                                if (xAppleWebToken && location && ssttt) {
-                                  let isFinal1 = await changePasswordReq(proxy, password, ifssp, xAppleWebToken, ssttt);
-                                  console.log("isFinal1...");
-                                  console.log(isFinal1);
-                                  return resolve({
-                                    mail: email,
-                                    pass: password,
-                                    proxy: proxyString,
-                                    status: 'checked',
-                                    note: isFinal1
-                                  })
-                                }
-                              } else {
-                                let isFinal2 = await changePasswordReq(proxy, password, ifssp, xAppleWebToken, ssttt);
-                                console.log("isFinal2...");
-                                console.log(isFinal2);
-                                return resolve({
-                                  mail: email,
-                                  pass: password,
-                                  proxy: proxyString,
-                                  status: 'checked',
-                                  note: isFinal2
-                                })
-                              }
-                            }
-                          }
-                        } else {
+                      console.log("options...");
+                      console.log(options);
+                      if (Array.isArray(options) && options.includes("questions")) {
+                        console.log("inside...");
+                        [location, xAppleWebToken] = await sendRequestMail(proxy, ifssp, xAppleWebToken, ssttt);
+                        console.log("verifyBirthday...");
+                        [ssttt, xAppleWebToken] = await verifyBirthday(proxy, ifssp, xAppleWebToken, ssttt, location);
+                        const verifyBirthdayResult = await verifyBirthday(proxy, ifssp, xAppleWebToken, ssttt, '/password/verify/birthday', birthday);
+                        let questions = [];
+                        if (verifyBirthdayResult == 'sai birthday') {
                           return resolve({
                             mail: email,
                             pass: password,
                             proxy: proxyString,
                             status: 'checked',
-                            note: 'mail not match'
+                            note: 'sai birthday'
                           })
+                        } else if (Array.isArray(verifyBirthdayResult)) {
+                          [location, xAppleWebToken] = verifyBirthdayResult;
+                        }
+                        if (!location || !location.includes('/password/verify/questions')) {
+                          console.log("something wrong in verifyBirtday");
+                          continue;
+                        }
+                        console.log("location...");
+                        console.log(location);
+                        [ssttt, xAppleWebToken, questions] = await verifyQuestion(proxy, ifssp, xAppleWebToken, ssttt, location);
+                        console.log("questions1....");
+                        console.log(questions);
+                        if (questions?.length > 0) {
+                          questions = questions.map(q => ({ ...q, answer: answers[q.question] }))
+                        } else {
+                          continue;
+                        }
+                        console.log("questions2....");
+                        console.log(questions);
+                        const verifyQuestionResult = await verifyQuestion(proxy, ifssp, xAppleWebToken, ssttt, '/password/verify/questions', questions);
+                        if (verifyQuestionResult === 'sai chbm') {
+                          return resolve({
+                            mail: email,
+                            pass: password,
+                            proxy: proxyString,
+                            status: 'checked',
+                            note: 'sai chbm'
+                          })
+                        } else if (Array.isArray(verifyQuestionResult)) {
+                          [location, xAppleWebToken, ssttt] = verifyQuestionResult;
+                        }
+                        if (!location) {
+                          continue
+                        }
+                        [xAppleWebToken, ssttt, location] = await getResetOption(proxy, location, ifssp, xAppleWebToken, ssttt);
+                        console.log("getResetOption result...");
+                        if (xAppleWebToken && location && ssttt) {
+                          console.log("90%...");
+                          if (location.includes('/password/unlock')) {
+                            [xAppleWebToken, location, ssttt] = await sendResetOption(proxy, ifssp, xAppleWebToken, ssttt);
+                            if (xAppleWebToken && location && ssttt) {
+                              let isFinal1 = await changePasswordReq(proxy, password, ifssp, xAppleWebToken, ssttt);
+                              console.log("isFinal1...");
+                              console.log(isFinal1);
+                              return resolve({
+                                mail: email,
+                                pass: password,
+                                proxy: proxyString,
+                                status: 'checked',
+                                note: isFinal1
+                              })
+                            }
+                          } else {
+                            let isFinal2 = await changePasswordReq(proxy, password, ifssp, xAppleWebToken, ssttt);
+                            console.log("isFinal2...");
+                            console.log(isFinal2);
+                            return resolve({
+                              mail: email,
+                              pass: password,
+                              proxy: proxyString,
+                              status: 'checked',
+                              note: isFinal2
+                            })
+                          }
                         }
                         break;
-                      } else {
+                      } else if (Array.isArray(options) && !options.includes("questions")) {
+                        return resolve({
+                          mail: email,
+                          pass: password,
+                          proxy: proxyString,
+                          status: 'checked',
+                          note: 'no recovery by questions'
+                        })
+                      } else if (sstt) {
                         [location, xAppleWebToken] = await recoverOption(proxy, ifssp, xAppleWebToken, ssttt);
                       }
                     } else {
@@ -1066,7 +1081,7 @@ const sendMail = async (email, password, birthday, answers, proxyString) => {
                     }
                   }
                 }
-              } else {
+              } else if (resSendCaptcha && resSendCaptcha !== "wrong captcha") {
                 return resolve({
                   mail: email,
                   pass: password,
@@ -1076,9 +1091,11 @@ const sendMail = async (email, password, birthday, answers, proxyString) => {
                 })
               }
             }
+          } else {
+            console.log("getCaptchaReq got issue...");
           }
         }
-      } while (flagRetryCaptcha && countTry < 10);
+      } while (countTry < 10);
       return resolve({
         mail: email,
         pass: password,
@@ -1144,23 +1161,23 @@ const changePassword = async (password, url, proxyString) => {
   })
 }
 
-(async () => {
-  // let a = await changePassword("Qwer112113@", "https://iforgot.apple.com/verify/email?key=001396-00-6f54950e557827d0b1ce3febd071b2698a0e4b8d6a23869f8469adb1aa958724LTOW&language=US-EN", "127.0.0.1:40001");
-  // console.log(a);
-  let b = await sendMail(
-    "rungimac@hotmail.com",
-    "Zxcv123123@@@",
-    { 'day': '03', 'month': '10', 'year': '1988' },
-    {
-      'What is the first name of your best friend in high school?': 'CPGkfP2AYI',
-      'What is your dream job?': 'VyCM1W505D',
-      'In what city did your parents meet?': 'Jx2Yu2ZKNg'
-    },
-    "residential.legionproxy.io:12321:47069246f87a:a01050b0eb1b"
-  );
-  console.log(b);
+// (async () => {
+//   // let a = await changePassword("Qwer112113@", "https://iforgot.apple.com/verify/email?key=001396-00-6f54950e557827d0b1ce3febd071b2698a0e4b8d6a23869f8469adb1aa958724LTOW&language=US-EN", "127.0.0.1:40001");
+//   // console.log(a);
+//   let b = await sendMail(
+//     "lala_ueda@hotmail.com",
+//     "O61dqQfibX@",
+//     { 'day': '03', 'month': '10', 'year': '1988' },
+//     {
+//       'What is the first name of your best friend in high school?': 'CPGkfP2AYI',
+//       'What is your dream job?': 'VyCM1W505D',
+//       'In what city did your parents meet?': 'OqxgFuhFDD'
+//     },
+//     "datacenter-us.lightningproxies.net:9999"
+//   );
+//   console.log(b);
 
-})()
+// })()
 
 module.exports = {
   sendMail,

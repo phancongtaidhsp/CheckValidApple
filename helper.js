@@ -387,6 +387,8 @@ const getCaptchaResultNope = async (proxy, apiKey, imageData) => {
     }
     await delay(1000);
   }
+  console.log("idCaptchaNope..");
+  console.log(idCaptcha);
   if (idCaptcha) {
     let onProxy = true;
     for (let i = 0; i < 60; i++) {
@@ -416,13 +418,13 @@ const getCaptchaResultNope = async (proxy, apiKey, imageData) => {
         if (res?.data?.data) {
           return res?.data?.data?.[0];
         } else {
-          onProxy = false;
+          onProxy = i % 2 == 0 ? true : false;
         }
       } catch (error) {
         if (error?.response?.status != 409) {
           return null;
         } else {
-          onProxy = false;
+          onProxy = i % 2 == 0 ? true : false;
         }
       }
       await delay(1000);
