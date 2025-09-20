@@ -1,10 +1,29 @@
 const axios = require('axios-https-proxy-fix');
+const axiosRetry = require('axios-retry').default;
 const cheerio = require('cheerio');
 const { getCaptchaResultNope } = require('./helper');
 
 const instance = axios.create({
   timeout: 30000,
 })
+
+// Gắn retry vào instance
+axiosRetry(instance, {
+  retries: 3, // Số lần thử lại
+  retryDelay: (retryCount) => {
+    console.log(`retry time ${retryCount}...`);
+    return retryCount * 1000; // Delay tăng dần: 1s, 2s, 3s
+  },
+  retryCondition: (error) => {
+    // Chỉ retry nếu lỗi mạng, timeout hoặc socket
+    return (
+      axiosRetry.isNetworkOrIdempotentRequestError(error) ||
+      error.code === 'ECONNRESET' ||
+      error.code === 'ETIMEDOUT' ||
+      error.message.includes('Socket is closed')
+    );
+  }
+});
 
 const getConfig = (proxy) => {
   return new Promise((resolve) => {
@@ -489,6 +508,8 @@ const verifyBirthday = (proxy, ifssp, xAppleWebToken, ssttt, location, birthday)
           }
           resolve([location, xAppleWebToken]);
         } else {
+          console.log("error verify birtday");
+          console.log(error);
           resolve([null, null]);
         }
       });
@@ -1165,15 +1186,15 @@ const changePassword = async (password, url, proxyString) => {
 //   // let a = await changePassword("Qwer112113@", "https://iforgot.apple.com/verify/email?key=001396-00-6f54950e557827d0b1ce3febd071b2698a0e4b8d6a23869f8469adb1aa958724LTOW&language=US-EN", "127.0.0.1:40001");
 //   // console.log(a);
 //   let b = await sendMail(
-//     "lala_ueda@hotmail.com",
+//     "hasnai_syed5@hotmail.com",
 //     "O61dqQfibX@",
-//     { 'day': '03', 'month': '10', 'year': '1988' },
+//     { 'day': '25', 'month': '05', 'year': '1999' },
 //     {
-//       'What is the first name of your best friend in high school?': 'CPGkfP2AYI',
-//       'What is your dream job?': 'VyCM1W505D',
-//       'In what city did your parents meet?': 'OqxgFuhFDD'
+//       'What is the first name of your best friend in high school?': 'jcyd2xlHB1',
+//       'What is your dream job?': 'AbrowzKLlp',
+//       'In what city did your parents meet?': 'Xyt7WwqIuV'
 //     },
-//     "datacenter-us.lightningproxies.net:9999"
+//     "169.197.82.58:10507"
 //   );
 //   console.log(b);
 

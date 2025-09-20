@@ -359,7 +359,7 @@ const getProcessCaptcha = (proxy, apiKey, imageData) => {
     if (proxy) {
       config.proxy = proxy;
     }
-    axios.request(config)
+    instance.request(config)
       .then((response) => {
         if (response?.data?.data) {
           resolve(response?.data?.data);
@@ -414,7 +414,7 @@ const getCaptchaResultNope = async (proxy, apiKey, imageData) => {
         config.proxy = proxy;
       }
       try {
-        let res = await axios.request(config);
+        let res = await instance.request(config);
         if (res?.data?.data) {
           return res?.data?.data?.[0];
         } else {
