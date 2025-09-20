@@ -9,7 +9,7 @@ const instance = axios.create({
 
 // Gắn retry vào instance
 axiosRetry(instance, {
-  retries: 3, // Số lần thử lại
+  retries: 5, // Số lần thử lại
   retryDelay: (retryCount) => {
     console.log(`retry time ${retryCount}...`);
     return retryCount * 1000; // Delay tăng dần: 1s, 2s, 3s
@@ -413,8 +413,8 @@ const verifyBirthday = (proxy, ifssp, xAppleWebToken, ssttt, location, birthday)
   let data = null;
   if (birthday) {
     data = JSON.stringify({
-      "monthOfYear": birthday.month,
       "dayOfMonth": birthday.day,
+      "monthOfYear": birthday.month,
       "year": birthday.year
     });
   }
@@ -1186,15 +1186,15 @@ const changePassword = async (password, url, proxyString) => {
 //   // let a = await changePassword("Qwer112113@", "https://iforgot.apple.com/verify/email?key=001396-00-6f54950e557827d0b1ce3febd071b2698a0e4b8d6a23869f8469adb1aa958724LTOW&language=US-EN", "127.0.0.1:40001");
 //   // console.log(a);
 //   let b = await sendMail(
-//     "hasnai_syed5@hotmail.com",
+//     "aoyueare@hotmail.com",
 //     "O61dqQfibX@",
-//     { 'day': '25', 'month': '05', 'year': '1999' },
+//     { 'day': '02', 'month': '02', 'year': '1966' },
 //     {
-//       'What is the first name of your best friend in high school?': 'jcyd2xlHB1',
-//       'What is your dream job?': 'AbrowzKLlp',
-//       'In what city did your parents meet?': 'Xyt7WwqIuV'
+//       'What is the first name of your best friend in high school?': 'OuPdXC9JTn',
+//       'What is your dream job?': '79x5XXa1ds',
+//       'In what city did your parents meet?': 'TzmX5l7Vvl'
 //     },
-//     "169.197.82.58:10507"
+//     "datacenter-us.lightningproxies.net:9999"
 //   );
 //   console.log(b);
 
