@@ -444,6 +444,7 @@ const verifyBirthday = (proxy, ifssp, xAppleWebToken, ssttt, location, birthday)
     if (data) {
       options = {
         method: 'POST',
+        proxy,
         url: 'https://iforgot.apple.com/password/verify/birthday',
         headers: {
           'Accept': 'application/json, text/javascript, */*; q=0.01',
@@ -549,6 +550,7 @@ const verifyQuestion = (proxy, ifssp, xAppleWebToken, ssttt, location, questions
     if (data) {
       options = {
         method: 'POST',
+        proxy,
         url: 'https://iforgot.apple.com/password/verify/questions',
         headers: {
           'Accept': 'application/json, text/javascript, */*; q=0.01',
