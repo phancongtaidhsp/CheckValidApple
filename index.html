@@ -3,7 +3,7 @@
 
 <head>
   <meta charset="UTF-8">
-  <title>Login Change Pass AppleID (2025. v1)</title>
+  <title>Change Hotmail Password AppleID (2026. v1)</title>
   <!-- https://electronjs.org/docs/tutorial/security#csp-meta-tag -->
   <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline';" />
   <link rel="stylesheet" href="style.css">
@@ -11,7 +11,7 @@
 </head>
 
 <body>
-  <h1 class="title-app">Login Change Pass AppleID (2025. v1)</h1>
+  <h1 class="title-app">Change Hotmail Password AppleID (2026. v1)</h1>
   <div id="thongbao" class="alert alert-success hidden" role="alert">
     Đã chạy xong file data
   </div>
@@ -20,9 +20,8 @@
     <button id="pause" type="button" class="button btn btn-danger">Pause</button>
     <button id="result" class="button btn btn-info">Xuất kết quả</button>
     <div class="value">
-      <input type="input" id="filepathmail" placeholder="Đường dẫn file mail" value="E:\data\10idtest.txt">
-      <input type="input" id="filepathproxy" placeholder="Đường dẫn file proxy" value="E:\data\proxyapple.txt">
-      <input type="input" id="password" placeholder="Mật khẩu mới" value="Xilass2Cs21@">
+      <input type="input" id="filepathmail" placeholder="Đường dẫn file mail">
+      <input type="input" id="filepathproxy" placeholder="Đường dẫn file proxy">
       <input type="input" id="thread" placeholder="Số luồng">
     </div>
     <div class="value">
@@ -47,7 +46,7 @@
     </div>
   </div>
   <ul class="info">
-    <li>file data format theo id|pass|question1|answer1|question2|answer2|question3|answer3|birthday</li>
+    <li>file data format theo mail|oath2|token</li>
   </ul>
   <script src="./renderer.js"></script>
 </body>

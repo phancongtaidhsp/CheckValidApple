@@ -3,9 +3,8 @@ const path = require('node:path');
 const electron = require('electron');
 const LineByLineReader = require('line-by-line');
 const fs = require('fs-extra');
-const { CHBMAppleID } = require('./ipv4');
 const { sampleSize } = require('lodash');
-const { sendMail } = require('./apple');
+const { action } = require('./action');
 const ipc = electron.ipcMain;
 
 let win;
@@ -41,7 +40,7 @@ app.on('window-all-closed', () => {
   }
 })
 
-const run = async function (pathFileMail, pathFileProxy, password = 'dII2Rk@h&pTepzkc', thread) {
+const run = async function (pathFileMail, pathFileProxy, thread) {
   let incompleteFile1 = isFileExists(pathFileMail);
   let incompleteFile2 = isFileExists(pathFileMail);
   if (incompleteFile1) {
@@ -55,11 +54,8 @@ const run = async function (pathFileMail, pathFileProxy, password = 'dII2Rk@h&pT
   win.webContents.send('disable', true);
   let listProxy = fs.readFileSync(pathFileProxy, 'utf8');
   listProxy = listProxy.split(/\r?\n/);
-  let count = 0;
-  let out = `${__dirname}\\..\\extraResources\\LoginDoiPassCHBMApple\\output.txt`;
-  let success = `${__dirname}\\..\\extraResources\\LoginDoiPassCHBMApple\\success.txt`;
-  let fail = `${__dirname}\\..\\extraResources\\LoginDoiPassCHBMApple\\fail.txt`;
-  let objectThread = {};
+  let outsuccess = `${__dirname}\\..\\extraResources\\ChangePassHotmailApple\\success.txt`;
+  let outfail = `${__dirname}\\..\\extraResources\\ChangePassHotmailApple\\fail.txt`;
   let startIndex = 0;
   lr = new LineByLineReader(pathFileMail, {
     start: currentIndex
@@ -71,83 +67,40 @@ const run = async function (pathFileMail, pathFileProxy, password = 'dII2Rk@h&pT
   });
 
   lr.on('line', async function (info) {
-    const [mail, pass, question1, answer1, question2, answer2, question3, answer3, birthday] = info.split("|");
-    let birth = new Date(birthday);
-    let day = `${birth.getDate()}`;
-    let month = `${birth.getMonth() + 1}`;
-    let year = `${birth.getFullYear()}`;
-    if (day < 10) day = `0${day}`;
-    if (month < 10) month = `0${month}`;
-    birth = { day, month, year };
-    let answers = {
-      [question1]: answer1,
-      [question2]: answer2,
-      [question3]: answer3
-    }
-
-    let ix = startIndex;
+    const [mail, oath2, token] = info.split("|");
+    let oath2token = `${oath2}|${token}`;
+    
     if (pause) {
       isDone = false;
       lr.close();
       return;
     }
-    if (!listProxy[count]) {
-      count = 0;
-    }
-    if (startIndex >= thread) {
-      for (const key in objectThread) {
-        if (Object.hasOwnProperty.call(objectThread, key)) {
-          if (objectThread[key]?.checking === false) {
-            ix = key;
-            break;
-          }
-        }
-      }
-    }
-    objectThread[ix] = { mail, checking: true, checked: false }
+
     try {
       (async () => {
-        let vInfo = {};
-        let tryTime = 0;
-        do {
-          let proxy = sampleSize(listProxy, 1)[0];
-          vInfo = await sendMail(mail, password, birth, answers, proxy);
-          if (vInfo.status == "checked") {
-            objectThread[ix] = { mail, checking: false, checked: vInfo.status === "checked" }
-            let result = Object.values(vInfo).join("|") + "\n";
-            if (vInfo.note == "successfully") {
-              result = [mail, password, question1, answer1, question2, answer2, question3, answer3, birthday].join("|") + "\n";
-              fs.appendFileSync(success, result);
-              win.webContents.send('success', 1, pause);
-            } else {
-              fs.appendFileSync(fail, result);
-              win.webContents.send('fail', 1, pause);
-            }
-            fs.appendFileSync(out, result);
+          let proxiesApple = sampleSize(listProxy, 5);
+          let [passwd, status] = await action(mail, oath2token, proxiesApple);
+          if (status == "pass") {
+            let result = `${mail}|${passwd}` + "\n";
+            fs.appendFileSync(outsuccess, result);
+            win.webContents.send('success', 1, pause);
             lr.resume();
           } else {
-            tryTime++;
+            fs.appendFileSync(outfail, result);
+            win.webContents.send('fail', 1, pause);
+            lr.resume();
           }
-        } while (vInfo.status != 'checked' && tryTime < 5 && !pause);
-        if (vInfo?.status != 'checked') {
-          objectThread[ix] = { mail, checking: false, checked: vInfo.status === "checked" }
-          let result = Object.values({ ...vInfo, status: "not checked" }).join("|") + "\n";
-          fs.appendFileSync(out, result);
-          win.webContents.send('fail', 1, pause);
-          lr.resume();
-        }
       })()
     } catch (error) {
+      lr.resume();
       console.log(error);
     }
-
 
     if (startIndex >= thread - 1) {
       lr.pause()
     } else {
       startIndex++;
     }
-    count++;
     currentIndex++;
     win.webContents.send('total', currentIndex);
   });
@@ -168,8 +121,8 @@ function isFileExists(pathFile) {
   return false;
 }
 
-ipc.on('start', async function (event, pathFileMail, pathFileProxy, password, thread) {
-  let pathFolder = `${__dirname}\\..\\extraResources\\LoginDoiPassCHBMApple`;
+ipc.on('start', async function (event, pathFileMail, pathFileProxy, thread) {
+  let pathFolder = `${__dirname}\\..\\extraResources\\ChangePassHotmailApple`;
   let incompleteFolder = isFileExists(pathFolder);
   if (incompleteFolder) {
     fs.mkdirSync(pathFolder);
@@ -179,7 +132,7 @@ ipc.on('start', async function (event, pathFileMail, pathFileProxy, password, th
     startTime++;
     win.webContents.send('time', startTime);
   }, 1000);
-  run(pathFileMail, pathFileProxy, password, thread);
+  run(pathFileMail, pathFileProxy, thread);
 })
 
 ipc.on('pause', async function (event) {
@@ -192,8 +145,9 @@ ipc.on('pause', async function (event) {
   }
 })
 
-ipc.on('result', function (event, pathFileMail) {
-  let output = `${__dirname}\\..\\extraResources\\LoginDoiPassCHBMApple\\output.txt`;
+const xuatKetQua = (pathFileMail) => {
+  let outsuccess = `${__dirname}\\..\\extraResources\\ChangePassHotmailApple\\success.txt`;
+  let outfail = `${__dirname}\\..\\extraResources\\ChangePassHotmailApple\\fail.txt`;
   let incompleteFile1 = isFileExists(pathFileMail);
   if (incompleteFile1) {
     win.webContents.send('checkfiles', incompleteFile1);
@@ -201,17 +155,40 @@ ipc.on('result', function (event, pathFileMail) {
   }
   let listMail = fs.readFileSync(pathFileMail, 'utf8');
   listMail = listMail.split(/\r?\n/);
-  let listMailOutput = fs.readFileSync(output, 'utf8');
-  listMailOutput = listMailOutput.split(/\r?\n/);
+  let listMailSuccess = fs.readFileSync(outsuccess, 'utf8');
+  listMailSuccess = listMailSuccess.split(/\r?\n/);
+  let listMailFail = fs.readFileSync(outfail, 'utf8');
+  listMailFail = listMailFail.split(/\r?\n/);
   // remove all mail success
-  for (const maildata of listMailOutput) {
+  for (const maildata of listMailSuccess) {
     let mail = maildata.split('|')?.[0];
-    let indexMail = listMail.findIndex(m => m.includes(mail));
-    if (maildata.includes("|checked|") && indexMail >= 0) {
+    let indexMail = listMail.findIndex(m => m == mail);
+    if (indexMail >= 0) {
       listMail = [...listMail.slice(0, indexMail), ...listMail.slice(indexMail + 1)];
     }
   }
-
+  let newListMailFail = [...listMailFail];
+  for (const maildata of listMailFail) {
+    if (maildata.includes("khong ve mail") || maildata.includes("fail step 3") || maildata.includes("fail send mail") || maildata.includes("recaptcha")) {
+      // remove fail in fail file
+      let indexMail = newListMailFail.findIndex(m => m == maildata);
+      if (indexMail >= 0) {
+        newListMailFail = [...newListMailFail.slice(0, indexMail), ...newListMailFail.slice(indexMail + 1)];
+      }
+    } else {
+      // remove fail in input file
+      let mail = maildata.split('|')?.[0];
+      let indexMail = listMail.findIndex(m => m == mail);
+      if (indexMail >= 0) {
+        listMail = [...listMail.slice(0, indexMail), ...listMail.slice(indexMail + 1)];
+      }
+    }
+  }
   fs.writeFileSync(pathFileMail, listMail.join('\n'), 'utf8');
+  fs.writeFileSync(outfail, newListMailFail.join('\n'), 'utf8');
+}
+
+ipc.on('result', function (event, pathFileMail) {
+  xuatKetQua(pathFileMail);
   win.webContents.send('result', true);
 })

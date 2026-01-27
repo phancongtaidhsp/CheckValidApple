@@ -303,7 +303,7 @@ const getCaptchaResult = async (apiKey, imageData) => {
 }
 
 const generatePassword = () => {
-  return randomize('A', 2) + randomize('0', 2) + randomize('a', 2) + randomize('0', 2) + '@' + randomize('a', 4);
+  return randomize('A', 3) + randomize('0', 2) + randomize('a', 1) + randomize('0', 3) + '@' + randomize('a', 3);
 }
 
 const encryptPassword = (password) => {
@@ -359,7 +359,7 @@ const getProcessCaptcha = (proxy, apiKey, imageData) => {
     if (proxy) {
       config.proxy = proxy;
     }
-    instance.request(config)
+    axios.request(config)
       .then((response) => {
         if (response?.data?.data) {
           resolve(response?.data?.data);
@@ -385,13 +385,11 @@ const getCaptchaResultNope = async (proxy, apiKey, imageData) => {
     if (idCaptcha) {
       break;
     }
-    await delay(1000);
+    await delay(2000);
   }
-  console.log("idCaptchaNope..");
-  console.log(idCaptcha);
   if (idCaptcha) {
     let onProxy = true;
-    for (let i = 0; i < 60; i++) {
+    for (let i = 0; i < 120; i++) {
       const ua = {
         "httplib": "node-fetch",
         "lang": "node",
@@ -414,20 +412,20 @@ const getCaptchaResultNope = async (proxy, apiKey, imageData) => {
         config.proxy = proxy;
       }
       try {
-        let res = await instance.request(config);
+        let res = await axios.request(config);
         if (res?.data?.data) {
           return res?.data?.data?.[0];
         } else {
-          onProxy = i % 2 == 0 ? true : false;
+          onProxy = false;
         }
       } catch (error) {
         if (error?.response?.status != 409) {
           return null;
         } else {
-          onProxy = i % 2 == 0 ? true : false;
+          onProxy = false;
         }
       }
-      await delay(1000);
+      await delay(2000);
     }
   }
   return null;
@@ -468,10 +466,56 @@ const fetchPiaProxyByThread = (proxy) => {
   })
 }
 
+const getUrlViaOauth2 = async (mail, oath2token) => {
+  let data = JSON.stringify({
+    "email": mail,
+    "pass": "1",
+    "refresh_token": oath2token.split("|")[0],
+    "client_id": oath2token.split("|")[1],
+  });
+  return new Promise((resolve) => {
+    var options = {
+      method: 'POST',
+      url: 'https://tools.dongvanfb.net/api/get_messages_oauth2',
+      headers: {
+        'Accept': '*/*', 
+        'Accept-Language': 'vi,en-US;q=0.9,en;q=0.8', 
+        'Connection': 'keep-alive', 
+        'Content-Type': 'application/json', 
+        'Origin': 'https://dongvanfb.net', 
+        'Referer': 'https://dongvanfb.net/', 
+        'Sec-Fetch-Dest': 'empty', 
+        'Sec-Fetch-Mode': 'cors', 
+        'Sec-Fetch-Site': 'same-site', 
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36', 
+        'sec-ch-ua': '"Not;A=Brand";v="99", "Google Chrome";v="139", "Chromium";v="139"', 
+        'sec-ch-ua-mobile': '?0', 
+        'sec-ch-ua-platform': '"Windows"'
+      },
+      data
+    };
+    instanceDefault.request(options)
+      .then(function (response) {
+        if (response.data && response.data.messages) {
+          let url = null;
+          for (const message of response.data.messages) {
+            if (message.from == "appleid@id.apple.com") {
+              url = message.message.match(/https:\/\/iforgot\.apple\.com\/verify\/email\?key=[^"]*/)[0].trim();
+              break;
+            }
+          }
+          resolve(url);
+        } else {
+          resolve(null);
+        }
+      }).catch((e) => {
+        resolve(null);
+      });
+  })
+}
+
 // (async () => {
-//   const { idDaisySMS, phoneDaisySMS } = await rentPhoneDaisySMS("DG9DHgk0pTh5RJAwh1auz9TR2BjWFv");
-//   console.log(idDaisySMS);
-//   console.log(phoneDaisySMS);
+//   await getUrlViaOauth2("jenny_busbengtssson@hotmail.com", "M.C506_BAY.0.U.-CkqXZ62y6*87k2lDfOOxJ84v6hl1KB8CAQK!9SPM0Wqp1Xp86STKj!PZMX9QSoc2kvLgFSMqbE7i!Cz4hJcu37IQ9Rj5zkbh1TvJ46Pcd!Tm87*omyK4WSSsmb5ZMYzNfMmubiAE84N3l47bLLeeGlFqpsIsUuwLe8vLffyB3gkS!ftiWSAK797DxtULrxDRJ4kT5MJ1B2BSnyGXaNN7!3tDi!Huso58L52H4QgpkL0!MsCIi5wZZCpOcrmtpFog178XNrGSex2OMA6AlgRp1u4ZCLtIXTmSKiWRl48nEiSGXeCvv08q97ajWFjyijlfwOexFsDsDMwi0G0jhC4crVCDv2baOCBfkdUieNh3Ks6*lHAV22Uet81GSJmUzMIn2Y2bbDEJYVeF7Tt!IQNBZunKAsUrdzegB5EJwzsU06R2D6pTJkFkFN*nLUXZtLXrgg$$|2429d14c-f4c7-495c-8894-956e92597c34")
 // })()
 
 module.exports = {
@@ -491,5 +535,6 @@ module.exports = {
   decryptPassword,
   delay,
   splitArrayIntoChunks,
-  fetchPiaProxyByThread
+  fetchPiaProxyByThread,
+  getUrlViaOauth2
 };
