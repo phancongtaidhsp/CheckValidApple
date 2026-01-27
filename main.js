@@ -86,6 +86,7 @@ const run = async function (pathFileMail, pathFileProxy, thread) {
             win.webContents.send('success', 1, pause);
             lr.resume();
           } else {
+            let result = `${mail}|${status || 'fail step 3'}` + "\n";
             fs.appendFileSync(outfail, result);
             win.webContents.send('fail', 1, pause);
             lr.resume();
@@ -162,7 +163,7 @@ const xuatKetQua = (pathFileMail) => {
   // remove all mail success
   for (const maildata of listMailSuccess) {
     let mail = maildata.split('|')?.[0];
-    let indexMail = listMail.findIndex(m => m == mail);
+    let indexMail = listMail.findIndex(m => m.includes(mail));
     if (indexMail >= 0) {
       listMail = [...listMail.slice(0, indexMail), ...listMail.slice(indexMail + 1)];
     }
@@ -178,7 +179,7 @@ const xuatKetQua = (pathFileMail) => {
     } else {
       // remove fail in input file
       let mail = maildata.split('|')?.[0];
-      let indexMail = listMail.findIndex(m => m == mail);
+      let indexMail = listMail.findIndex(m => m.includes(mail));
       if (indexMail >= 0) {
         listMail = [...listMail.slice(0, indexMail), ...listMail.slice(indexMail + 1)];
       }
