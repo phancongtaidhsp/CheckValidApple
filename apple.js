@@ -684,7 +684,7 @@ const sendMail = async (email, proxyString) => {
         if (sstt && ssttt && ifssp && xAppleWebToken) {
           let [captchaImage, captchaId, captchaToken] = await getCaptchaReq(proxy, xAppleWebToken, ifssp, ssttt);
           if (captchaImage && captchaId && captchaToken) {
-            let textCaptcha = await getCaptchaResultNope(null, "I-95SR219EXSLG", captchaImage);
+            let textCaptcha = await getCaptchaResultNope(proxy, "I-95SR219EXSLG", captchaImage);
             console.log("textCaptcha...");
             console.log(textCaptcha);
             if (textCaptcha) {
