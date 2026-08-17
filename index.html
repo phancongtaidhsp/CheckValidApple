@@ -3,7 +3,7 @@
 
 <head>
   <meta charset="UTF-8">
-  <title>Change Hotmail Password AppleID (2026. v1)</title>
+  <title>Check Valid Tiktok (2026. v1)</title>
   <!-- https://electronjs.org/docs/tutorial/security#csp-meta-tag -->
   <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline';" />
   <link rel="stylesheet" href="style.css">
@@ -11,7 +11,7 @@
 </head>
 
 <body>
-  <h1 class="title-app">Change Hotmail Password AppleID (2026. v1)</h1>
+  <h1 class="title-app">Check Valid Tiktok (2026. v1)</h1>
   <div id="thongbao" class="alert alert-success hidden" role="alert">
     Đã chạy xong file data
   </div>
@@ -20,8 +20,8 @@
     <button id="pause" type="button" class="button btn btn-danger">Pause</button>
     <button id="result" class="button btn btn-info">Xuất kết quả</button>
     <div class="value">
-      <input type="input" id="filepathmail" placeholder="Đường dẫn file mail">
-      <input type="input" id="filepathproxy" placeholder="Đường dẫn file proxy">
+      <input type="input" id="filepathmail" placeholder="Đường dẫn file mail" value="/Users/taiphan/Desktop/ToolApple/data/data.txt">
+      <input type="input" id="filepathproxy" placeholder="Đường dẫn file proxy" value="/Users/taiphan/Desktop/ToolApple/data/proxy.txt">
       <input type="input" id="thread" placeholder="Số luồng">
     </div>
     <div class="value">
@@ -31,13 +31,13 @@
       </div>
     </div>
     <div class="value">
-      <div class="success">
-        <span>Success: </span>
-        <span id="live">0</span>
+      <div class="valid">
+        <span>Valid: </span>
+        <span id="valid">0</span>
       </div>
-      <div class="fail">
-        <span>Fail: </span>
-        <span id="die">0</span>
+      <div class="invalid">
+        <span>Invalid: </span>
+        <span id="invalid">0</span>
       </div>
       <div class="total">
         <span>Total: </span>
@@ -46,7 +46,7 @@
     </div>
   </div>
   <ul class="info">
-    <li>file data format theo mail|oath2|token</li>
+    <li>file data format theo mail</li>
   </ul>
   <script src="./renderer.js"></script>
 </body>

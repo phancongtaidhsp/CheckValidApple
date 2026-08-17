@@ -17,27 +17,27 @@ window.addEventListener('DOMContentLoaded', () => {
   ipcRenderer.on('total', function (e, total) {
     document.getElementById(`total`).innerText = total;
   })
-  ipcRenderer.on('fail', function (e, step, pause) {
-    let failStep = parseInt(document.getElementById(`die`).innerText) + step;
-    let successStep = parseInt(document.getElementById(`live`).innerText);
+  ipcRenderer.on('invalid', function (e, step, pause) {
+    let invalidStep = parseInt(document.getElementById(`invalid`).innerText) + step;
+    let validStep = parseInt(document.getElementById(`valid`).innerText);
     let totalStep = parseInt(document.getElementById(`total`).innerText);
-    document.getElementById(`die`).innerText = failStep;
-    if (pause && failStep + successStep === totalStep) {
+    document.getElementById(`invalid`).innerText = invalidStep;
+    if (pause && invalidStep + validStep === totalStep) {
       document.getElementById('thongbao').classList.add('hidden')
       document.getElementById('start').disabled = false;
-    } else if (!pause && failStep + successStep === totalStep) {
+    } else if (!pause && invalidStep + validStep === totalStep) {
       showThongBao('alert-success', 'Đã chạy hết file data')
     }
   })
-  ipcRenderer.on('success', function (e, step, pause) {
-    let failStep = parseInt(document.getElementById(`die`).innerText);
-    let successStep = parseInt(document.getElementById(`live`).innerText) + step;
+  ipcRenderer.on('valid', function (e, step, pause) {
+    let invalidStep = parseInt(document.getElementById(`invalid`).innerText);
+    let validStep = parseInt(document.getElementById(`valid`).innerText) + step;
     let totalStep = parseInt(document.getElementById(`total`).innerText);
-    document.getElementById(`live`).innerText = successStep;
-    if (pause && failStep + successStep === totalStep) {
+    document.getElementById(`valid`).innerText = validStep;
+    if (pause && invalidStep + validStep === totalStep) {
       document.getElementById('thongbao').classList.add('hidden')
       document.getElementById('start').disabled = false;
-    } else if (!pause && failStep + successStep === totalStep) {
+    } else if (!pause && invalidStep + validStep === totalStep) {
       showThongBao('alert-success', 'Đã chạy hết file data')
     }
   })

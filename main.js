@@ -4,7 +4,7 @@ const electron = require('electron');
 const LineByLineReader = require('line-by-line');
 const fs = require('fs-extra');
 const { sampleSize } = require('lodash');
-const { action } = require('./action');
+const { checkEmailWithRetry } = require('./action');
 const ipc = electron.ipcMain;
 
 let win;
@@ -54,8 +54,8 @@ const run = async function (pathFileMail, pathFileProxy, thread) {
   win.webContents.send('disable', true);
   let listProxy = fs.readFileSync(pathFileProxy, 'utf8');
   listProxy = listProxy.split(/\r?\n/);
-  let outsuccess = `${__dirname}\\..\\extraResources\\ChangePassHotmailApple\\success.txt`;
-  let outfail = `${__dirname}\\..\\extraResources\\ChangePassHotmailApple\\fail.txt`;
+  let outvalid = `${__dirname}\\..\\extraResources\\CheckValidTiktok\\valid.txt`;
+  let outinvalid = `${__dirname}\\..\\extraResources\\CheckValidTiktok\\invalid.txt`;
   let startIndex = 0;
   lr = new LineByLineReader(pathFileMail, {
     start: currentIndex
@@ -67,9 +67,7 @@ const run = async function (pathFileMail, pathFileProxy, thread) {
   });
 
   lr.on('line', async function (info) {
-    const [mail, oath2, token] = info.split("|");
-    let oath2token = `${oath2}|${token}`;
-    
+    const [mail] = info.split("|");
     if (pause) {
       isDone = false;
       lr.close();
@@ -78,19 +76,21 @@ const run = async function (pathFileMail, pathFileProxy, thread) {
 
     try {
       (async () => {
-          let proxiesApple = sampleSize(listProxy, 5);
-          let [passwd, status] = await action(mail, oath2token, proxiesApple);
-          if (status == "pass") {
-            let result = `${mail}|${passwd}` + "\n";
-            fs.appendFileSync(outsuccess, result);
-            win.webContents.send('success', 1, pause);
-            lr.resume();
-          } else {
-            let result = `${mail}|${status || 'fail step 3'}` + "\n";
-            fs.appendFileSync(outfail, result);
-            win.webContents.send('fail', 1, pause);
-            lr.resume();
-          }
+        let proxiesApple = sampleSize(listProxy, 5);
+        let { status, email } = await checkEmailWithRetry(mail, proxiesApple);
+        if (status == "email_success") {
+          let result = `${email}|${status}` + "\n";
+          fs.appendFileSync(outvalid, result);
+          win.webContents.send('valid', 1, pause);
+          lr.resume();
+        } else if (status == "email_not_found" || status == "failed") {
+          let result = `${email}|${status}` + "\n";
+          fs.appendFileSync(outinvalid, result);
+          win.webContents.send('invalid', 1, pause);
+          lr.resume();
+        } else {
+          lr.resume();
+        }
       })()
     } catch (error) {
       lr.resume();
@@ -123,7 +123,7 @@ function isFileExists(pathFile) {
 }
 
 ipc.on('start', async function (event, pathFileMail, pathFileProxy, thread) {
-  let pathFolder = `${__dirname}\\..\\extraResources\\ChangePassHotmailApple`;
+  let pathFolder = `${__dirname}\\..\\extraResources\\CheckValidTiktok`;
   let incompleteFolder = isFileExists(pathFolder);
   if (incompleteFolder) {
     fs.mkdirSync(pathFolder);
@@ -147,8 +147,8 @@ ipc.on('pause', async function (event) {
 })
 
 const xuatKetQua = (pathFileMail) => {
-  let outsuccess = `${__dirname}\\..\\extraResources\\ChangePassHotmailApple\\success.txt`;
-  let outfail = `${__dirname}\\..\\extraResources\\ChangePassHotmailApple\\fail.txt`;
+  let outvalid = `${__dirname}\\..\\extraResources\\CheckValidTiktok\\valid.txt`;
+  let outinvalid = `${__dirname}\\..\\extraResources\\CheckValidTiktok\\invalid.txt`;
   let incompleteFile1 = isFileExists(pathFileMail);
   if (incompleteFile1) {
     win.webContents.send('checkfiles', incompleteFile1);
@@ -156,37 +156,27 @@ const xuatKetQua = (pathFileMail) => {
   }
   let listMail = fs.readFileSync(pathFileMail, 'utf8');
   listMail = listMail.split(/\r?\n/);
-  let listMailSuccess = fs.readFileSync(outsuccess, 'utf8');
-  listMailSuccess = listMailSuccess.split(/\r?\n/);
-  let listMailFail = fs.readFileSync(outfail, 'utf8');
-  listMailFail = listMailFail.split(/\r?\n/);
-  // remove all mail success
-  for (const maildata of listMailSuccess) {
+  let listMailValid = fs.readFileSync(outvalid, 'utf8');
+  listMailValid = listMailValid.split(/\r?\n/);
+  let listMailInvalid = fs.readFileSync(outinvalid, 'utf8');
+  listMailInvalid = listMailInvalid.split(/\r?\n/);
+  // remove all mail valid
+  for (const maildata of listMailValid) {
     let mail = maildata.split('|')?.[0];
     let indexMail = listMail.findIndex(m => m.includes(mail));
     if (indexMail >= 0) {
       listMail = [...listMail.slice(0, indexMail), ...listMail.slice(indexMail + 1)];
     }
   }
-  let newListMailFail = [...listMailFail];
-  for (const maildata of listMailFail) {
-    if (maildata.includes("khong ve mail") || maildata.includes("fail step 3") || maildata.includes("fail send mail") || maildata.includes("recaptcha")) {
-      // remove fail in fail file
-      let indexMail = newListMailFail.findIndex(m => m == maildata);
-      if (indexMail >= 0) {
-        newListMailFail = [...newListMailFail.slice(0, indexMail), ...newListMailFail.slice(indexMail + 1)];
-      }
-    } else {
-      // remove fail in input file
-      let mail = maildata.split('|')?.[0];
-      let indexMail = listMail.findIndex(m => m.includes(mail));
-      if (indexMail >= 0) {
-        listMail = [...listMail.slice(0, indexMail), ...listMail.slice(indexMail + 1)];
-      }
+  // remove all mail invalid
+  for (const maildata of listMailInvalid) {
+    let mail = maildata.split('|')?.[0];
+    let indexMail = listMail.findIndex(m => m.includes(mail));
+    if (indexMail >= 0) {
+      listMail = [...listMail.slice(0, indexMail), ...listMail.slice(indexMail + 1)];
     }
   }
   fs.writeFileSync(pathFileMail, listMail.join('\n'), 'utf8');
-  fs.writeFileSync(outfail, newListMailFail.join('\n'), 'utf8');
 }
 
 ipc.on('result', function (event, pathFileMail) {

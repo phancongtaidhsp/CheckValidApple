@@ -16,11 +16,11 @@
   font-size: 30px;
   color: #609BEB;
 }
-.fail{
+.invalid{
   font-size: 30px;
   color: #f33737;
 }
-.success {
+.valid {
   font-size: 30px;
   color: #015c18;
 }
