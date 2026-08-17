@@ -54,8 +54,8 @@ const run = async function (pathFileMail, pathFileProxy, thread) {
   win.webContents.send('disable', true);
   let listProxy = fs.readFileSync(pathFileProxy, 'utf8');
   listProxy = listProxy.split(/\r?\n/);
-  let outvalid = `${__dirname}\\..\\extraResources\\CheckValidTiktok\\valid.txt`;
-  let outinvalid = `${__dirname}\\..\\extraResources\\CheckValidTiktok\\invalid.txt`;
+  let outvalid = `${__dirname}\\..\\extraResources\\CheckValidApple\\valid.txt`;
+  let outinvalid = `${__dirname}\\..\\extraResources\\CheckValidApple\\invalid.txt`;
   let startIndex = 0;
   lr = new LineByLineReader(pathFileMail, {
     start: currentIndex
@@ -123,7 +123,7 @@ function isFileExists(pathFile) {
 }
 
 ipc.on('start', async function (event, pathFileMail, pathFileProxy, thread) {
-  let pathFolder = `${__dirname}\\..\\extraResources\\CheckValidTiktok`;
+  let pathFolder = `${__dirname}\\..\\extraResources\\CheckValidApple`;
   let incompleteFolder = isFileExists(pathFolder);
   if (incompleteFolder) {
     fs.mkdirSync(pathFolder);
@@ -147,8 +147,8 @@ ipc.on('pause', async function (event) {
 })
 
 const xuatKetQua = (pathFileMail) => {
-  let outvalid = `${__dirname}\\..\\extraResources\\CheckValidTiktok\\valid.txt`;
-  let outinvalid = `${__dirname}\\..\\extraResources\\CheckValidTiktok\\invalid.txt`;
+  let outvalid = `${__dirname}\\..\\extraResources\\CheckValidApple\\valid.txt`;
+  let outinvalid = `${__dirname}\\..\\extraResources\\CheckValidApple\\invalid.txt`;
   let incompleteFile1 = isFileExists(pathFileMail);
   if (incompleteFile1) {
     win.webContents.send('checkfiles', incompleteFile1);
