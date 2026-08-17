@@ -1,1 +1,1 @@
-# Check Valid Tiktok (2026. v1)
+# Check Valid Apple (2026. v1)
